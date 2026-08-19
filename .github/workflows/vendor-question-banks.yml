@@ -1,0 +1,54 @@
+name: Vendor MTC question banks
+
+on:
+  push:
+    paths:
+      - '.github/workflows/vendor-question-banks.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  vendor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download pinned question-bank copies
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p data
+          COMMIT='e14192f5f9debf15c4de39c435c8f8606887be05'
+          BASE="https://raw.githubusercontent.com/gonzalo-droid/mtc-quiz/${COMMIT}/app/src/main/assets/json"
+          curl --fail --location --retry 3 "${BASE}/a1_questions.json" -o data/questions-auto.json
+          curl --fail --location --retry 3 "${BASE}/b2b_questions.json" -o data/questions-moto.json
+
+      - name: Validate banks
+        shell: python
+        run: |
+          import json
+          from pathlib import Path
+          expected = {'questions-auto.json': 200, 'questions-moto.json': 204}
+          for name, count in expected.items():
+              payload = json.loads((Path('data') / name).read_text(encoding='utf-8'))
+              items = payload.get('data', payload) if isinstance(payload, dict) else payload
+              if len(items) != count:
+                  raise SystemExit(f'{name}: expected {count}, got {len(items)}')
+              print(f'{name}: {len(items)} questions OK')
+
+      - name: Commit vendored data
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/questions-auto.json data/questions-moto.json
+          if git diff --cached --quiet; then
+            echo 'Question banks already up to date.'
+          else
+            git commit -m 'Add local MTC question banks'
+            git push
+          fi
