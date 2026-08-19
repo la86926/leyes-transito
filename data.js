@@ -1,53 +1,227 @@
-window.RUTA_DATA={
-meta:{title:'Ruta Perú',reviewed:'19 de agosto de 2026',reviewISO:'2026-08-19',note:'Contenido educativo revisado con fuentes oficiales. Las fuentes originales quedan disponibles como respaldo opcional.'},
-nav:[
- {group:'Aprender',items:[['home','⌂','Inicio'],['moto','◉','Motocicleta'],['auto','▣','Automóvil'],['signs','◇','Señales'],['rules','↗','Reglas generales']]},
- {group:'Practicar',items:[['cases','◈','Casos prácticos'],['quiz','✓','Evaluación'],['errors','!','Mis errores'],['favorites','☆','Favoritos']]},
- {group:'Referencia',items:[['infractions','△','Infracciones'],['sources','ⓘ','Fuentes oficiales'],['progress','◌','Mi progreso']]}
-],
-sources:{
- ds018:{title:'Cascos, lentes y chalecos para motociclistas',norm:'D.S. N.° 018-2025-MTC',entity:'Ministerio de Transportes y Comunicaciones',date:'8 de noviembre de 2025',status:'Vigente · verificado',url:'https://www.gob.pe/institucion/mtc/normas-legales/7380666-018-2025-mtc',refs:['Artículo 105.1','Artículo 105.2','G.59','G.68','G.69'],digest:['Modifica el Reglamento Nacional de Tránsito respecto del uso de casco, lentes protectores y chaleco en motocicletas.','Cuando el casco no cuenta con visor, corresponde el uso de lentes protectores.','La infracción G.59 es grave y equivale al 8 % de la UIT, 40 puntos y retención del vehículo.','Las sanciones G.68 y G.69 vinculadas al chaleco se aplican en lugares declarados en estado de emergencia por orden interno cuando la declaratoria lo disponga expresamente. El minicurso separa esta regla sancionadora del texto del artículo 105.2 para evitar simplificaciones.']},
- rd0012:{title:'Especificaciones técnicas para casco y chaleco',norm:'R.D. N.° 0012-2025-MTC/18',entity:'Ministerio de Transportes y Comunicaciones',date:'20 de junio de 2025',status:'Vigente con modificaciones',url:'https://www.gob.pe/institucion/mtc/normas-legales/6958752-0012-2025-mtc-18',refs:['Anexo I','Anexo II'],digest:['Aprueba las especificaciones técnicas para el uso de cascos de seguridad de conductores y acompañantes de motocicletas.','Deroga la R.D. N.° 008-2025-MTC/18.','Debe leerse junto con sus modificaciones posteriores, entre ellas la R.D. N.° 0028-2025-MTC/18.']},
- rd0028:{title:'Actualización de las especificaciones de cascos',norm:'R.D. N.° 0028-2025-MTC/18',entity:'Ministerio de Transportes y Comunicaciones',date:'25 de noviembre de 2025',status:'Vigente · verificado',url:'https://www.gob.pe/institucion/mtc/normas-legales/7485473-0028-2025-mtc-18',refs:['Anexo I modificado'],digest:['Modifica el Anexo I de la R.D. N.° 0012-2025-MTC/18.','La actualización oficial reconoce cascos integral, modular, cross/off-road y abierto/jet, siempre que cumplan una certificación admitida.','La actualización permite visores o lentes polarizados dentro de las condiciones técnicas aplicables.']},
- casco2026:{title:'Guía Casco Seguro 2026',norm:'Orientación oficial del MTC',entity:'Ministerio de Transportes y Comunicaciones',date:'21 de julio de 2026',status:'Recomendación de seguridad',url:'https://www.gob.pe/institucion/mtc/noticias/1421459-mtc-presenta-la-guia-de-uso-de-casco-seguro-para-motociclistas-en-peru-para-promover-una-conduccion-mas-segura',refs:['Guía Casco Seguro'],digest:['El MTC recuerda que conductor y pasajero deben usar casco con certificación aceptada.','Entre las certificaciones citadas por el MTC figuran ECE 22.05, ECE 22.06 y DOT.','Como recomendación de seguridad, el MTC aconseja reemplazar el casco después de un impacto fuerte aunque no se observen daños.']},
- licenseB:{title:'Clasificación de licencias Clase B',norm:'Reglamento del Sistema de Emisión de Licencias',entity:'Ministerio de Transportes y Comunicaciones',date:'Consulta 2026',status:'Vigente · verificado',url:'https://portal.mtc.gob.pe/transportes/terrestre/licencias/info_general_clasificacion_licencias.html',refs:['Clase B','Categoría II-B'],digest:['La licencia B-IIb autoriza a conducir vehículos L3 y L4 destinados al transporte particular de pasajeros o mercancías.','L3 corresponde a motocicletas de dos ruedas y L4 a motocicletas con sidecar.','La categoría B-IIb también comprende los vehículos autorizados por B-IIa.']},
- licenseA:{title:'Clasificación de licencias Clase A',norm:'Reglamento del Sistema de Emisión de Licencias',entity:'Ministerio de Transportes y Comunicaciones',date:'Consulta 2026',status:'Vigente · verificado',url:'https://www.gob.pe/262-tipos-de-licencia-de-conducir-brevete',refs:['Clase A','Categoría I'],digest:['La licencia A-I es la categoría común para automóviles de uso particular.','Comprende vehículos particulares como sedanes, hatchbacks, station wagon, SUV, pickup y furgones dentro de la clasificación aplicable.']},
- art91:{title:'Documentos que puede requerir la autoridad de tránsito',norm:'Reglamento Nacional de Tránsito · artículo 91',entity:'Reglamento Nacional de Tránsito / Gobierno Regional del Callao',date:'Texto consultado en 2026',status:'Vigente · verificado',url:'https://web.regioncallao.gob.pe/transportes-y-comunicaciones/derecho-de-los-conductores/',refs:['Artículo 91'],digest:['El artículo 91 contempla documento de identidad, licencia de conducir vigente correspondiente al vehículo, tarjeta de identificación vehicular y certificado de inspección técnica vehicular cuando corresponda.','También contempla el SOAT físico vigente; si se cuenta con SOAT electrónico, su contratación y vigencia se verifica en la base de datos correspondiente.']},
- ds011:{title:'Actualización del RNT: control, velocidad y estacionamiento',norm:'D.S. N.° 011-2026-MTC',entity:'Ministerio de Transportes y Comunicaciones',date:'21 de abril de 2026',status:'Vigente · verificado',url:'https://www.gob.pe/institucion/mtc/normas-legales/8042204-011-2026-mtc',refs:['Artículo 57','Artículo 90','Artículo 168-A','Artículo 215'],digest:['Las indicaciones del efectivo de la PNP asignado al control del tránsito prevalecen sobre los semáforos; los semáforos prevalecen sobre otros dispositivos.','El artículo 168-A establece con carácter general un margen de tolerancia de 5 km/h para la supervisión de velocidades máximas. Esto es tolerancia de fiscalización, no un nuevo límite de velocidad.','Actualiza las prohibiciones de estacionamiento previstas en el artículo 215.']},
- speed:{title:'Límites máximos de velocidad en zona urbana',norm:'D.S. N.° 025-2021-MTC',entity:'Ministerio de Transportes y Comunicaciones',date:'Vigentes desde el 18 de julio de 2022',status:'Vigente · verificado',url:'https://www.gob.pe/26617-nuevos-limites-de-velocidad-en-zonas-urbanas-a-nivel-nacional',refs:['Límites urbanos'],digest:['En calles y jirones: máximo 30 km/h.','En avenidas: máximo 50 km/h.','En carreteras que cruzan zonas comerciales, escolares u hospitales: 30 km/h; en zonas residenciales: 50 km/h.','La señalización reguladora específica de la vía también debe respetarse.']},
- ds002:{title:'Restricciones de tránsito durante estados de emergencia',norm:'D.S. N.° 002-2026-MTC',entity:'Ministerio de Transportes y Comunicaciones',date:'15 de enero de 2026',status:'Vigente · verificado',url:'https://www.gob.pe/institucion/mtc/normas-legales/7625120-002-2026-mtc',refs:['Artículo 140-B','M41'],digest:['Incorpora el artículo 140-B al Reglamento Nacional de Tránsito.','Una declaratoria de estado de emergencia por orden interno puede establecer restricciones específicas al tránsito y uso de vehículos en la vía pública.','Las medidas concretas dependen de la declaratoria vigente, por lo que esta parte debe revisarse cuando cambie un estado de emergencia.']},
- motoMTC:{title:'Reglas de circulación segura para motociclistas',norm:'Orientación oficial basada en el RNT',entity:'Ministerio de Transportes y Comunicaciones',date:'1 de febrero de 2024',status:'Orientación oficial',url:'https://www.gob.pe/institucion/mtc/noticias/900548-mtc-exhorta-a-motociclistas-a-cumplir-reglamento-nacional-de-transito-para-prevenir-siniestros-viales-con-consecuencias-fatales',refs:['Orientación MTC'],digest:['El MTC recuerda que la motocicleta debe circular ocupando un carril completo y no debe invadir ciclovías ni veredas.','También recuerda restricciones de adelantamiento cuando la señalización lo prohíbe, al ingresar a una intersección, al aproximarse o atravesar un cruce a nivel y en puentes, viaductos o túneles.']},
- signals:{title:'Manual de Dispositivos de Control de Tránsito Automotor',norm:'R.D. N.° 26-2024-MTC/18',entity:'Ministerio de Transportes y Comunicaciones',date:'16 de octubre de 2024',status:'Manual vigente · verificado',url:'https://www.gob.pe/institucion/mtc/normas-legales/6150395-26-2024-mtc-18',refs:['Manual 2024'],digest:['Aprueba la actualización del Manual de Dispositivos de Control de Tránsito Automotor.','Incluye señales verticales, señales horizontales o demarcaciones y dispositivos para casos especiales.','Organiza diseños de señales reglamentarias, preventivas e informativas y deroga el manual aprobado en 2016.']},
- uit2026:{title:'Valor de la UIT 2026',norm:'D.S. N.° 301-2025-EF',entity:'Ministerio de Economía y Finanzas',date:'17 de diciembre de 2025',status:'Vigente para 2026',url:'https://www.gob.pe/institucion/mef/normas-legales/7540449-301-2025-ef',refs:['UIT 2026'],digest:['La UIT para 2026 es S/ 5 500.','Una sanción equivalente al 8 % de la UIT corresponde a S/ 440 durante 2026.']}
-},
-modules:{
- moto:{title:'Motocicleta',subtitle:'Primero, lo que realmente usas al conducir.',description:'Licencia, documentos, casco, pasajero, carril, adelantamiento, velocidad y situaciones reales.',tone:'green'},
- auto:{title:'Automóvil',subtitle:'Prepárate desde ahora para conducir un auto.',description:'Licencia A-I y reglas que comparten automóvil y motocicleta.',tone:'blue'},
- signs:{title:'Señales de tránsito',subtitle:'Reconoce antes de memorizar.',description:'Estructura del manual vigente: reglamentarias, preventivas, informativas y marcas viales.',tone:'peach'},
- rules:{title:'Reglas generales',subtitle:'Decisiones que se repiten todos los días.',description:'Autoridad, semáforos, velocidad, estados de emergencia y conducción preventiva.',tone:'violet'},
- infractions:{title:'Infracciones',subtitle:'Sanciones solo cuando están verificadas.',description:'Base inicial de infracciones con monto calculado usando la UIT vigente de 2026.',tone:'rose'}
-},
-lessons:[
- {id:'moto-license',module:'moto',title:'¿Qué licencia corresponde a una motocicleta?',status:'norm',sources:['licenseB'],summary:'Para una motocicleta L3 de uso particular, la referencia de clasificación es la licencia Clase B, categoría II-B.',steps:{law:'La categoría B-IIb autoriza vehículos L3 y L4 destinados al transporte particular de pasajeros o mercancías.',meaning:'Una licencia para automóvil no reemplaza automáticamente la licencia correspondiente a motocicleta.',practice:'Comprueba en tu licencia la clase, categoría y vigencia antes de conducir.',example:'Una motocicleta convencional de dos ruedas pertenece a la categoría vehicular L3.',mistake:'Pensar que cualquier brevete vigente autoriza cualquier vehículo.'},practice:'Antes de prestar o cambiar de motocicleta, revisa que su categoría vehicular sea compatible con tu licencia.',warning:'Para transporte público o categorías distintas pueden existir requisitos adicionales.',quiz:{q:'¿Qué categoría de licencia autoriza, entre otros, una motocicleta L3 de uso particular?',options:['A-I','B-IIb','B-IIa','A-IIa'],answer:1,why:'La clasificación oficial del MTC ubica L3 y L4 de uso particular en la categoría B-IIb.'}},
- {id:'moto-docs',module:'moto',title:'Documentos durante una intervención',status:'norm',sources:['art91'],summary:'El Reglamento Nacional de Tránsito establece los documentos que puede requerir el efectivo asignado al control del tránsito.',steps:{law:'El artículo 91 contempla identidad, licencia vigente adecuada, tarjeta de identificación vehicular, CITV cuando corresponda y SOAT/CAT según el caso.',meaning:'No todos los documentos se presentan necesariamente en papel: el SOAT electrónico puede verificarse en la base correspondiente.',practice:'Antes de salir, confirma vigencia de licencia y seguro y que los datos del vehículo sean correctos.',example:'Si tu SOAT es electrónico, su contratación y vigencia pueden verificarse digitalmente.',mistake:'Confiar en una fotografía antigua sin revisar la vigencia real.'},practice:'Ten ubicados tus documentos y accesos digitales para no buscarlos durante una intervención.',warning:'El CITV se exige según corresponda; depende del régimen aplicable al vehículo.'},
- {id:'moto-helmet',module:'moto',title:'Casco certificado: qué exige hoy la norma',status:'norm',sources:['ds018','rd0012','rd0028','casco2026'],summary:'Conductor y acompañante deben usar casco; para motocicletas, el casco debe cumplir las especificaciones técnicas vigentes.',steps:{law:'El artículo 105 remite a las especificaciones del MTC. La R.D. N.° 0012-2025-MTC/18 fue modificada posteriormente por la R.D. N.° 0028-2025-MTC/18.',meaning:'No basta cualquier protección de cabeza: el casco debe cumplir una certificación admitida y las especificaciones aplicables.',practice:'Revisa certificación, integridad, talla y sistema de retención antes de usarlo.',example:'El MTC reconoce cascos integral, modular, cross/off-road y abierto/jet cuando cumplen certificación aceptada.',mistake:'Usar casco de bicicleta, industrial, decorativo, sin certificación o estructuralmente dañado.'},practice:'Al comprar, prioriza certificación verificable y ajuste correcto antes que la apariencia.',warning:'La R.D. N.° 008-2025-MTC/18 fue derogada; no debe usarse como fuente vigente.',quiz:{q:'Si el casco no tiene visor, ¿qué exige la regla vigente?',options:['Nada adicional','Lentes protectores','Solo una mica de noche','Únicamente el pasajero usa lentes'],answer:1,why:'El artículo 105 modificado contempla lentes protectores cuando el casco no tiene visor.'}},
- {id:'moto-visor',module:'moto',title:'Visor y lentes: la regla fue actualizada',status:'norm',sources:['ds018','rd0028'],summary:'Las reglas técnicas de 2025 actualizaron el tratamiento de visores y lentes, por lo que ya no es correcto repetir información anterior sin revisar la modificación.',steps:{law:'El D.S. N.° 018-2025-MTC regula visor/lentes y la R.D. N.° 0028-2025-MTC/18 actualiza las especificaciones técnicas.',meaning:'La actualización permite visores o lentes polarizados dentro de las condiciones técnicas aplicables.',practice:'Elige una solución compatible con el casco y que mantenga visibilidad suficiente para la iluminación real.',example:'Una solución permitida durante el día puede no ser prudente para conducción nocturna.',mistake:'Seguir una publicación anterior a noviembre de 2025 como si no hubiera sido modificada.'},practice:'Si el trayecto continuará de noche, usa protección ocular que no reduzca peligrosamente la visibilidad.',warning:'Que una característica esté permitida no significa que sea segura en cualquier condición de luz.'},
- {id:'moto-chaleco',module:'moto',title:'Chaleco con placa: obligación y sanción',status:'norm',sources:['ds018','ds002'],summary:'La regulación debe leerse con cuidado: el D.S. N.° 018-2025-MTC focaliza la aplicación de las sanciones G.68 y G.69 en determinados estados de emergencia.',steps:{law:'Las sanciones por chaleco se aplican en lugares declarados en estado de emergencia por orden interno cuando la declaratoria correspondiente lo dispone expresamente.',meaning:'No es correcto resumir la situación como “se multa igual en todo el Perú”.',practice:'Si estás en una zona con estado de emergencia, revisa la declaratoria vigente y sus restricciones concretas.',example:'Una medida puede activarse en una zona y no en otra según la declaratoria aplicable.',mistake:'Confundir una norma permanente con una medida que depende de una declaratoria temporal.'},practice:'Revisa este punto antes de viajar a otra ciudad cuando haya estados de emergencia vigentes.',warning:'Los estados de emergencia cambian; esta parte necesita revisión periódica.'},
- {id:'moto-lane',module:'moto',title:'La motocicleta ocupa un carril completo',status:'recommendation',sources:['motoMTC'],summary:'El MTC recuerda que la motocicleta circula ocupando un carril completo y no debe invadir ciclovías ni veredas.',steps:{law:'La orientación oficial del MTC aplica las reglas del RNT a la circulación de motocicletas.',meaning:'La motocicleta debe integrarse al tránsito de forma visible y predecible.',practice:'Mantén una posición de carril que te permita ser visto y conservar margen de reacción.',example:'En tráfico lento, zigzaguear por espacios estrechos reduce el tiempo disponible para responder a una puerta, giro o cambio de carril.',mistake:'Circular por una ciclovía solo porque la motocicleta cabe físicamente.'},practice:'Busca visibilidad y espacio de escape antes que ganar unos segundos.',warning:'Esta ficha incluye orientación de seguridad del MTC; no toda recomendación práctica equivale por sí sola a una infracción tipificada.'},
- {id:'moto-overtake',module:'moto',title:'Adelantamientos: zonas de especial riesgo',status:'recommendation',sources:['motoMTC'],summary:'El MTC recuerda restricciones de adelantamiento en intersecciones, cruces a nivel, puentes, viaductos, túneles y donde la señalización lo prohíbe.',steps:{law:'La orientación oficial remite a las reglas del RNT sobre adelantamiento.',meaning:'Hay lugares donde el campo visual o el espacio de maniobra hacen especialmente peligroso intentar adelantar.',practice:'Antes de adelantar, confirma señalización, visibilidad, trayectoria del otro vehículo y espacio para reincorporarte.',example:'No inicies un adelantamiento justo cuando estás entrando a una intersección.',mistake:'Pensar que por ser angosta la motocicleta puede adelantar en cualquier lugar.'},practice:'Si la maniobra exige que otro conductor “te haga espacio”, probablemente ya estás consumiendo un margen de seguridad que necesitas.',warning:'Respeta siempre la señalización específica existente en la vía.'},
- {id:'moto-speed',module:'moto',title:'Velocidad urbana y tolerancia de fiscalización',status:'norm',sources:['speed','ds011'],summary:'En calles y jirones el máximo general es 30 km/h y en avenidas 50 km/h. El margen general de 5 km/h introducido en 2026 es una tolerancia de supervisión, no un nuevo límite.',steps:{law:'El D.S. N.° 025-2021-MTC fijó 30 km/h en calles/jirones y 50 km/h en avenidas; el D.S. N.° 011-2026-MTC incorporó el artículo 168-A sobre tolerancia de fiscalización.',meaning:'Una avenida no pasa a tener límite de 55 km/h: el límite sigue siendo 50 km/h.',practice:'Conduce tomando como referencia el límite real y la señalización, no intentando “consumir” el margen de fiscalización.',example:'En una avenida sin otra señal específica, la referencia general es 50 km/h.',mistake:'Sumar automáticamente 5 km/h al límite y tratar el resultado como una nueva velocidad permitida.'},practice:'Con lluvia, congestión o poca visibilidad puede ser prudente circular por debajo del máximo.',warning:'Un límite máximo no obliga a mantener esa velocidad si las condiciones no son seguras.',quiz:{q:'En una avenida urbana, ¿qué representa el margen general de 5 km/h del artículo 168-A?',options:['Un nuevo límite de 55 km/h','Una tolerancia de supervisión','Una velocidad mínima','Una excepción solo para motos'],answer:1,why:'El límite general permanece en 50 km/h; el margen de 5 km/h se refiere a la supervisión o fiscalización.'}},
- {id:'rules-police',module:'rules',title:'PNP, semáforo y señales: ¿qué prevalece?',status:'norm',sources:['ds011'],summary:'La actualización de 2026 establece una jerarquía clara para resolver instrucciones contradictorias en la vía.',steps:{law:'Las indicaciones del efectivo PNP asignado al control del tránsito prevalecen sobre el semáforo; el semáforo prevalece sobre otros dispositivos.',meaning:'Una luz verde no autoriza a continuar si un efectivo de tránsito te ordena detenerte.',practice:'Reduce velocidad y sigue la instrucción del efectivo cuando esté dirigiendo el tránsito.',example:'Semáforo verde + efectivo indicando “alto”: debes detenerte.',mistake:'Mirar solo el semáforo e ignorar al efectivo que está controlando la intersección.'},practice:'En intersecciones intervenidas, busca primero las señales manuales del efectivo.',warning:'La indicación debe provenir del efectivo asignado al control del tránsito.',quiz:{q:'Semáforo en verde, pero el efectivo PNP de tránsito ordena detenerte. ¿Qué haces?',options:['Avanzo porque el verde prevalece','Me detengo','Toco claxon y avanzo','Solo me detengo si hay peatones'],answer:1,why:'El artículo 57 modificado dispone que la indicación del efectivo PNP de tránsito prevalece sobre el semáforo.'}},
- {id:'rules-emergency',module:'rules',title:'Estados de emergencia y restricciones vehiculares',status:'norm',sources:['ds002'],summary:'Desde 2026 el RNT contempla expresamente restricciones específicas de tránsito y uso de vehículos cuando una declaratoria de emergencia así lo establezca.',steps:{law:'El artículo 140-B permite que la declaratoria establezca restricciones específicas.',meaning:'No existe una única restricción automática para todo estado de emergencia: hay que leer la declaratoria vigente.',practice:'Antes de conducir en una zona bajo emergencia, confirma horario, vehículos comprendidos y alcance territorial.',example:'Una declaratoria puede imponer una restricción nocturna y otra no hacerlo.',mistake:'Aplicar a tu ciudad una medida que corresponde a otra declaratoria.'},practice:'Esta es una de las fichas que debe revisarse con mayor frecuencia.',warning:'La app no afirma que exista hoy una restricción concreta en tu zona sin revisar la declaratoria correspondiente.'},
- {id:'auto-license',module:'auto',title:'Licencia A-I: punto de partida para automóvil',status:'norm',sources:['licenseA'],summary:'La licencia A-I es la categoría habitual para conducir automóviles particulares dentro de la clasificación aplicable.',steps:{law:'La clasificación oficial del MTC ubica en A-I los vehículos particulares comprendidos en las categorías permitidas.',meaning:'Es la referencia básica para sedanes, hatchbacks, SUV, pickup y otros vehículos particulares comprendidos.',practice:'Cuando adquieras un vehículo, revisa su categoría en la tarjeta de identificación y confirma que tu licencia lo autorice.',example:'Un automóvil particular convencional se estudia inicialmente dentro de A-I.',mistake:'Elegir la licencia por el tamaño aparente del vehículo y no por su clasificación.'},practice:'Aprende primero las reglas generales: prioridad, señales, velocidad y estacionamiento se aplican mucho antes de memorizar infracciones.',warning:'Vehículos o servicios especiales pueden requerir categorías superiores.'},
- {id:'signs-structure',module:'signs',title:'Cómo organiza las señales el manual vigente',status:'norm',sources:['signals'],summary:'El Manual 2024 organiza señales verticales, demarcaciones y otros dispositivos; dentro de las verticales se trabajan señales reglamentarias, preventivas e informativas.',steps:{law:'La R.D. N.° 26-2024-MTC/18 aprobó la actualización del Manual de Dispositivos de Control de Tránsito Automotor.',meaning:'No conviene aprender señales como dibujos aislados: cada familia comunica una función distinta.',practice:'Primero identifica la familia; luego el significado específico.',example:'Una señal reglamentaria comunica una regulación; una preventiva alerta sobre un riesgo o condición de la vía.',mistake:'Memorizar solo el color sin comprender la función de la señal.'},practice:'En las siguientes etapas se incorporarán fichas visuales fieles al manual oficial.',warning:'Las imágenes de señales se añadirán únicamente después de cotejarlas con el manual vigente.'}
-],
-cases:[
- {id:'case-police',title:'Verde, pero el policía te detiene',module:'rules',text:'Llegas a una intersección. El semáforo está en verde, pero un efectivo de la PNP asignado al control del tránsito te indica detenerte.',q:'¿Qué acción corresponde?',options:['Continuar por tener luz verde','Detenerte y seguir la indicación del efectivo','Esperar a que otro vehículo decida','Tocar claxon para confirmar'],answer:1,why:'La indicación del efectivo PNP asignado al control del tránsito prevalece sobre el semáforo.',source:'ds011'},
- {id:'case-visor',title:'Casco certificado sin visor',module:'moto',text:'Vas a salir en motocicleta con un casco certificado que no tiene visor instalado.',q:'¿Qué requisito adicional aplica?',options:['Ninguno','Lentes protectores','Solo llevar una mica guardada','Un chaleco en cualquier lugar del país'],answer:1,why:'La regla vigente contempla lentes protectores cuando el casco no tiene visor.',source:'ds018'},
- {id:'case-speed',title:'Avenida urbana despejada',module:'moto',text:'Circulas por una avenida urbana sin señal reguladora que indique otro límite. La vía está despejada.',q:'¿Cuál es el límite máximo general?',options:['30 km/h','50 km/h','55 km/h','60 km/h'],answer:1,why:'El límite máximo general en avenidas urbanas es 50 km/h. La tolerancia de fiscalización no modifica ese límite.',source:'speed'}
-],
-infractions:[
- {code:'G.59',title:'Casco/lentes en vehículos de categoría L no cabinados',level:'Grave',sanction:'8 % UIT',amount2026:'S/ 440',points:'40 puntos',measure:'Retención del vehículo',source:'ds018',note:'La tipificación exacta debe leerse junto al cuadro vigente y a las especificaciones técnicas aplicables.'},
- {code:'G.68 / G.69',title:'Chaleco distintivo en el ámbito previsto por la norma',level:'Grave',sanction:'8 % UIT',amount2026:'S/ 440',points:'20 puntos',measure:'Retención del vehículo',source:'ds018',note:'La aplicación de estas sanciones está focalizada en lugares declarados en estado de emergencia cuando la declaratoria lo dispone expresamente.'}
-]
+window.RUTA_DATA = {
+  meta: {
+    title: 'Ruta Perú',
+    reviewed: '19 de agosto de 2026',
+    reviewISO: '2026-08-19',
+    principle: 'Aprender primero. Practicar después. Simular al final.'
+  },
+
+  nav: [
+    { group: 'Tu aprendizaje', items: [
+      ['moto', '🏍', 'Motocicleta'],
+      ['auto', '🚗', 'Automóvil']
+    ]}
+  ],
+
+  sources: {
+    banks: {
+      title: 'Balotarios para el examen de conocimientos',
+      norm: 'Publicación oficial MTC',
+      entity: 'Ministerio de Transportes y Comunicaciones',
+      url: 'https://www.gob.pe/institucion/mtc/informes-publicaciones/1928110-examen-de-conocimientos-para-postulantes-a-licencias-de-conducir',
+      note: 'El MTC publica balotarios diferenciados por clase y categoría y mantiene un simulador oficial.'
+    },
+    ai: {
+      title: 'Balotario Clase A, categoría I',
+      norm: 'R.D. N.° 5980-2017-MTC/15',
+      entity: 'Ministerio de Transportes y Comunicaciones',
+      url: 'https://www.gob.pe/institucion/mtc/normas-legales/10341-5980-2017-mtc-15',
+      note: 'Aprueba el balotario A-I para la evaluación de conocimientos y dispone su aplicación a nivel nacional.'
+    },
+    biib: {
+      title: 'Balotario Clase B, categoría II-B',
+      norm: 'R.D. N.° 004-2020-MTC/18',
+      entity: 'Ministerio de Transportes y Comunicaciones',
+      url: 'https://www.gob.pe/institucion/mtc/normas-legales/454568-004-2020-mtc-18',
+      note: 'Aprueba los balotarios de Clase B categorías II-A, II-B y II-C.'
+    },
+    rnt: {
+      title: 'TUO del Reglamento Nacional de Tránsito – Código de Tránsito',
+      norm: 'D.S. N.° 016-2009-MTC y modificatorias',
+      entity: 'Ministerio de Transportes y Comunicaciones',
+      url: 'https://www.gob.pe/institucion/mtc/normas-legales/9897-016-2009-mtc',
+      note: 'Base normativa general. La aplicación debe considerar sus modificaciones posteriores.'
+    },
+    speed: {
+      title: 'Límites máximos de velocidad en zonas urbanas',
+      norm: 'D.S. N.° 025-2021-MTC',
+      entity: 'Ministerio de Transportes y Comunicaciones',
+      url: 'https://www.gob.pe/26617-nuevos-limites-de-velocidad-en-zonas-urbanas-a-nivel-nacional',
+      note: 'Calles y jirones: 30 km/h. Avenidas: 50 km/h, salvo señalización específica aplicable.'
+    },
+    manual: {
+      title: 'Manual de Dispositivos de Control de Tránsito Automotor',
+      norm: 'R.D. N.° 26-2024-MTC/18',
+      entity: 'Ministerio de Transportes y Comunicaciones',
+      url: 'https://www.gob.pe/institucion/mtc/normas-legales/6150395-26-2024-mtc-18',
+      note: 'Es la actualización vigente del manual de señales y dispositivos de control de tránsito.'
+    },
+    license: {
+      title: 'Clasificación de licencias de conducir',
+      norm: 'Reglamento Nacional del Sistema de Emisión de Licencias de Conducir',
+      entity: 'Ministerio de Transportes y Comunicaciones',
+      url: 'https://portal.mtc.gob.pe/transportes/terrestre/licencias/info_general_clasificacion_licencias.html',
+      note: 'A-I comprende vehículos particulares permitidos por su categoría. B-II-B autoriza vehículos L3 y L4 y también los comprendidos en B-II-A.'
+    },
+    helmet: {
+      title: 'Especificaciones técnicas para cascos de motocicleta',
+      norm: 'R.D. N.° 0012-2025-MTC/18, modificada por R.D. N.° 0028-2025-MTC/18',
+      entity: 'Ministerio de Transportes y Comunicaciones',
+      url: 'https://www.gob.pe/institucion/mtc/normas-legales/7485473-0028-2025-mtc-18',
+      note: 'Regulación técnica vigente para cascos de conductores y acompañantes de motocicletas.'
+    },
+    update2026: {
+      title: 'Modificación del Reglamento Nacional de Tránsito',
+      norm: 'D.S. N.° 011-2026-MTC',
+      entity: 'Ministerio de Transportes y Comunicaciones',
+      url: 'https://www.gob.pe/institucion/mtc/normas-legales/8042204-011-2026-mtc',
+      note: 'Modificación de 2026 que debe considerarse al revisar preguntas históricas del balotario.'
+    }
+  },
+
+  vehicles: {
+    moto: {
+      title: 'Motocicleta',
+      icon: '🏍️',
+      license: 'Clase B · Categoría II-B',
+      questionCount: 204,
+      bankFile: 'data/questions-moto.json',
+      source: 'biib',
+      intro: 'Empieza por lo que necesitas para circular en motocicleta y después practica con el balotario B-II-B completo.',
+      units: [
+        {
+          id: 'm1',
+          title: 'Antes de salir a la vía',
+          subtitle: 'Licencia, documentos, casco y acompañante',
+          rules: [
+            {title:'Licencia correcta', law:'La licencia B-II-B autoriza la conducción de vehículos de las categorías L3 y L4 y también los comprendidos en B-II-A.', plain:'Para una motocicleta convencional, tu referencia es B-II-B.', practice:'Verifica que la licencia esté vigente antes de conducir.', mistake:'Pensar que cualquier licencia Clase B autoriza automáticamente cualquier vehículo menor.', source:'license'},
+            {title:'Casco del conductor y acompañante', law:'El casco de seguridad para conductor y acompañante está sujeto a las especificaciones técnicas aprobadas por el MTC y a sus modificaciones vigentes.', plain:'No basta con usar cualquier casco: debe cumplir la especificación técnica aplicable.', practice:'Revisa certificación, estado, ajuste y sistema de retención antes de salir.', mistake:'Guiarse por publicaciones antiguas que citan especificaciones ya sustituidas.', source:'helmet'},
+            {title:'Documentación y habilitación', law:'El conductor debe contar con la documentación y condiciones habilitantes exigibles para circular, según el Reglamento Nacional de Tránsito y normas complementarias.', plain:'Licencia vigente, identificación del vehículo y seguro obligatorio son parte del control básico.', practice:'Antes de un viaje largo revisa documentos y vigencias.', mistake:'Esperar a una intervención para descubrir que un documento venció.', source:'rnt'}
+          ]
+        },
+        {
+          id: 'm2',
+          title: 'Señales, semáforos y marcas',
+          subtitle: 'Aprende a leer la vía antes de maniobrar',
+          rules: [
+            {title:'Obediencia a los dispositivos', law:'Conductores y peatones deben obedecer los dispositivos de control del tránsito, salvo instrucción válida en contrario de la autoridad competente.', plain:'La señalización organiza la circulación; no es opcional.', practice:'Mira señal vertical, semáforo y marcas antes de decidir un giro.', mistake:'Fijarse solo en el vehículo de adelante.', source:'rnt'},
+            {title:'Manual vigente', law:'Las señales y dispositivos se interpretan con el Manual de Dispositivos de Control de Tránsito Automotor vigente.', plain:'Reglamentarias, preventivas e informativas cumplen funciones distintas.', practice:'Primero identifica la familia de la señal y luego su mensaje.', mistake:'Memorizar un dibujo antiguo sin verificar el manual vigente.', source:'manual'},
+            {title:'Semáforo ámbar', law:'La luz ámbar advierte el cambio de fase; la conducta depende de si es posible detenerse de manera segura antes de ingresar a la intersección.', plain:'No significa acelerar para “ganarle” al rojo.', practice:'Anticipa la detención cuando tu ubicación y velocidad lo permiten.', mistake:'Interpretar el ámbar como una autorización para acelerar.', source:'rnt'}
+          ]
+        },
+        {
+          id: 'm3',
+          title: 'Prioridad e intersecciones',
+          subtitle: 'Quién pasa, cuándo detenerte y cómo girar',
+          rules: [
+            {title:'Autoridad de tránsito', law:'Las indicaciones del efectivo de la PNP asignado al control del tránsito prevalecen sobre el semáforo cuando dirige la circulación.', plain:'Si el semáforo dice una cosa y el efectivo te ordena otra, sigue al efectivo.', practice:'Reduce velocidad y busca sus señales manuales al aproximarte.', mistake:'Ignorar al efectivo porque la luz está verde.', source:'update2026'},
+            {title:'Giros', law:'Todo cambio de dirección debe prepararse con anticipación, ubicación adecuada y señalización durante la maniobra.', plain:'Señaliza antes de moverte, no después.', practice:'Posiciónate con tiempo y verifica espejos y puntos ciegos.', mistake:'Cruzar varios carriles en el último momento.', source:'rnt'},
+            {title:'Cruces peatonales', law:'El conductor debe respetar la prioridad y las zonas destinadas al cruce de peatones conforme a la regulación aplicable.', plain:'La motocicleta no tiene prioridad por ser pequeña o maniobrable.', practice:'Reduce velocidad cerca de pasos peatonales e intersecciones.', mistake:'Pasar por un espacio estrecho mientras un peatón cruza.', source:'rnt'}
+          ]
+        },
+        {
+          id: 'm4',
+          title: 'Carriles y adelantamientos',
+          subtitle: 'Muévete de forma visible y predecible',
+          rules: [
+            {title:'Uso del carril', law:'La motocicleta está sujeta a las reglas generales de circulación, carriles, adelantamiento y señalización.', plain:'Ser más angosta no elimina las reglas del carril.', practice:'Mantén una trayectoria predecible y espacio de seguridad.', mistake:'Zigzaguear entre vehículos como si las reglas de carril no aplicaran.', source:'rnt'},
+            {title:'Cambio de carril', law:'Antes de cambiar de carril se debe advertir la maniobra y comprobar que pueda realizarse sin peligro.', plain:'Direccional + observación + espacio suficiente.', practice:'Comprueba espejo y punto ciego antes de desplazarte.', mistake:'Usar la direccional como si otorgara prioridad automática.', source:'rnt'},
+            {title:'Adelantamiento', law:'El adelantamiento está sujeto a restricciones de lugar, visibilidad, señalización y seguridad.', plain:'Que la moto quepa no significa que el adelantamiento sea legal o seguro.', practice:'No inicies la maniobra si no tienes visibilidad y espacio para terminarla.', mistake:'Adelantar dentro de una situación de conflicto solo por encontrar un hueco.', source:'rnt'}
+          ]
+        },
+        {
+          id: 'm5',
+          title: 'Velocidad, luces y noche',
+          subtitle: 'Controla el riesgo antes de que aparezca',
+          rules: [
+            {title:'Velocidad urbana', law:'En calles y jirones el límite máximo general es 30 km/h y en avenidas 50 km/h, salvo señalización específica aplicable.', plain:'El límite antiguo de 60 km/h en avenidas ya no es la referencia general.', practice:'Usa el límite real como máximo, no como velocidad que debas mantener siempre.', mistake:'Aprender una pregunta histórica del balotario sin contrastarla con la norma vigente.', source:'speed'},
+            {title:'Velocidad segura', law:'Además del límite máximo, la conducción debe adecuarse a las condiciones de la vía, tránsito, visibilidad y clima.', plain:'A veces conducir legalmente exige ir bastante por debajo del máximo.', practice:'Reduce antes de la curva, no dentro de ella.', mistake:'Confundir “máximo permitido” con “velocidad segura”.', source:'rnt'},
+            {title:'Visibilidad nocturna', law:'El uso de luces y las reglas de visibilidad deben cumplirse según la situación de circulación.', plain:'De noche necesitas ver y ser visto sin deslumbrar a otros.', practice:'Al aproximarte a otro vehículo en sentido contrario evita mantener luces que deslumbren.', mistake:'Creer que más luz siempre significa más seguridad.', source:'rnt'}
+          ]
+        },
+        {
+          id: 'm6',
+          title: 'Infracciones y emergencias',
+          subtitle: 'Qué hacer cuando algo sale mal',
+          rules: [
+            {title:'No memorices solo la multa', law:'Las infracciones se tipifican por conducta y sus consecuencias pueden incluir multa, puntos, medidas preventivas u otras sanciones.', plain:'Primero entiende qué conducta está prohibida; el monto puede cambiar con la UIT.', practice:'Estudia código, conducta y consecuencia por separado.', mistake:'Memorizar únicamente una cifra en soles de un balotario antiguo.', source:'rnt'},
+            {title:'Alcohol y conducción', law:'La normativa prohíbe conducir bajo efectos que comprometan la capacidad y contempla controles y sanciones.', plain:'La decisión segura es no conducir después de consumir alcohol.', practice:'Planifica un medio de retorno antes de consumir.', mistake:'Confiar en “sentirse bien” como prueba de aptitud.', source:'rnt'},
+            {title:'Accidente de tránsito', law:'El balotario evalúa obligaciones y nociones de primeros auxilios para actuar frente a un siniestro.', plain:'Protege la escena, solicita ayuda y evita agravar lesiones.', practice:'Aprende primero qué no debes mover o improvisar.', mistake:'Actuar con prisa sin asegurar la zona ni pedir asistencia.', source:'banks'}
+          ]
+        }
+      ]
+    },
+
+    auto: {
+      title: 'Automóvil',
+      icon: '🚗',
+      license: 'Clase A · Categoría I',
+      questionCount: 200,
+      bankFile: 'data/questions-auto.json',
+      source: 'ai',
+      intro: 'Aprende las reglas esenciales para automóvil particular y después recorre el balotario A-I completo.',
+      units: [
+        {
+          id: 'a1',
+          title: 'Antes de conducir',
+          subtitle: 'Licencia, documentos y condiciones básicas',
+          rules: [
+            {title:'Licencia A-I', law:'La licencia A-I autoriza vehículos particulares comprendidos en las categorías vehiculares que establece la clasificación oficial.', plain:'Es la categoría de referencia para automóvil particular.', practice:'Verifica la categoría real del vehículo en su identificación.', mistake:'Elegir la licencia solo por el aspecto o tamaño del vehículo.', source:'license'},
+            {title:'Documentos exigibles', law:'Durante la conducción deben cumplirse las obligaciones documentarias previstas por el Reglamento Nacional de Tránsito y normas complementarias.', plain:'Licencia, identificación vehicular y seguro obligatorio forman parte del control habitual.', practice:'Comprueba vigencias antes de un viaje.', mistake:'Conducir mientras se “tramita después” un documento obligatorio.', source:'rnt'},
+            {title:'Condición del vehículo', law:'El vehículo debe circular en condiciones que no comprometan la seguridad y cumplir las exigencias técnicas que le correspondan.', plain:'Frenos, neumáticos, luces y visibilidad son parte de conducir legalmente y con seguridad.', practice:'Haz una revisión visual breve antes de salir a carretera.', mistake:'Pensar que la inspección técnica reemplaza tu revisión cotidiana.', source:'rnt'}
+          ]
+        },
+        {
+          id: 'a2',
+          title: 'Señales y semáforos',
+          subtitle: 'Entiende lo que la vía te está diciendo',
+          rules: [
+            {title:'Dispositivos de control', law:'Conductores y peatones están obligados a obedecer los dispositivos de control, salvo instrucción válida en contrario de la autoridad competente.', plain:'Señales, semáforos y marcas no compiten entre sí: se interpretan dentro de una jerarquía y contexto.', practice:'Escanea la vía antes de llegar a la intersección.', mistake:'Mirar el semáforo cuando ya estás dentro del cruce.', source:'rnt'},
+            {title:'Señales verticales', law:'El manual vigente organiza señales reglamentarias, preventivas e informativas, entre otros dispositivos.', plain:'Cada familia responde a una pregunta: qué debo hacer, qué riesgo viene o qué información necesito.', practice:'Clasifica la señal antes de memorizar su código.', mistake:'Aprender solo números de señal.', source:'manual'},
+            {title:'Marcas en pavimento', law:'Las marcas horizontales complementan la regulación de carriles, cruces, límites y maniobras.', plain:'Una línea no es decoración: comunica permiso, separación o restricción.', practice:'Observa color y continuidad de la marca antes de cambiar de posición.', mistake:'Cruzar una marca sin comprobar qué maniobra autoriza.', source:'manual'}
+          ]
+        },
+        {
+          id: 'a3',
+          title: 'Prioridad e intersecciones',
+          subtitle: 'Decide antes de entrar al conflicto',
+          rules: [
+            {title:'PNP y semáforo', law:'La indicación del efectivo de tránsito asignado al control prevalece sobre el semáforo cuando dirige la circulación.', plain:'Verde no significa avanzar si el efectivo ordena detenerte.', practice:'Busca primero señales manuales cuando hay control policial.', mistake:'Seguir al auto de adelante sin verificar la instrucción.', source:'update2026'},
+            {title:'Giro con anticipación', law:'El cambio de dirección debe señalizarse y ejecutarse desde una posición adecuada y con seguridad.', plain:'El giro comienza antes de mover el volante: observas, señalizas y te ubicas.', practice:'No cambies varios carriles justo antes de girar.', mistake:'Activar la direccional durante el giro.', source:'rnt'},
+            {title:'Peatones', law:'El conductor debe respetar las reglas de prioridad y los espacios destinados a peatones.', plain:'La protección del usuario vulnerable forma parte de la conducción.', practice:'Reduce velocidad antes del cruce, no después de ver al peatón.', mistake:'Bloquear el paso peatonal al detenerte.', source:'rnt'}
+          ]
+        },
+        {
+          id: 'a4',
+          title: 'Carriles y adelantamiento',
+          subtitle: 'Orden, distancia y maniobras previsibles',
+          rules: [
+            {title:'Posición en la vía', law:'La circulación debe respetar carriles, sentidos, demarcaciones y reglas de utilización de la calzada.', plain:'Tu carril organiza tu trayectoria y la de los demás.', practice:'Elige el carril con anticipación según la maniobra que realizarás.', mistake:'Usar el carril izquierdo lentamente y generar obstrucción cuando la norma exige otra conducta.', source:'rnt'},
+            {title:'Cambio de carril', law:'Toda maniobra debe advertirse y realizarse solo cuando exista espacio y seguridad suficientes.', plain:'La direccional avisa; no te concede el espacio.', practice:'Espejo, direccional, punto ciego y desplazamiento progresivo.', mistake:'Cambiar de carril por reacción tardía.', source:'rnt'},
+            {title:'Adelantamiento', law:'El adelantamiento se permite únicamente cuando las condiciones de vía, señalización y visibilidad lo hacen legal y seguro.', plain:'Necesitas espacio para salir, sobrepasar y regresar.', practice:'Si no ves dónde terminarás la maniobra, no la inicies.', mistake:'Adelantar cerca de un punto de conflicto sin visibilidad suficiente.', source:'rnt'}
+          ]
+        },
+        {
+          id: 'a5',
+          title: 'Velocidad y conducción nocturna',
+          subtitle: 'El máximo legal no siempre es seguro',
+          rules: [
+            {title:'Límites urbanos vigentes', law:'En calles y jirones: 30 km/h. En avenidas: 50 km/h, salvo señalización específica aplicable.', plain:'Las referencias antiguas de 40 y 60 km/h fueron modificadas.', practice:'Aprende primero 30/50 como regla urbana general vigente.', mistake:'Responder un balotario antiguo sin revisar si la velocidad cambió.', source:'speed'},
+            {title:'Adaptación de velocidad', law:'El conductor debe adecuar la velocidad a las condiciones existentes incluso cuando se encuentre por debajo del máximo.', plain:'Lluvia, oscuridad o congestión reducen el margen de seguridad.', practice:'Aumenta distancia y reduce velocidad cuando disminuye la visibilidad.', mistake:'Mantener el máximo porque “la ley lo permite”.', source:'rnt'},
+            {title:'Luces en carretera', law:'Las luces deben utilizarse de acuerdo con las condiciones y sin perjudicar la visibilidad de otros usuarios.', plain:'Al cruzarte con otro vehículo de noche evita deslumbrarlo.', practice:'Anticipa el cambio de luces y mantén limpia la superficie de los faros.', mistake:'Conservar luces altas frente a tráfico que viene en sentido contrario.', source:'rnt'}
+          ]
+        },
+        {
+          id: 'a6',
+          title: 'Infracciones, seguros y accidentes',
+          subtitle: 'Comprende consecuencias y actuación básica',
+          rules: [
+            {title:'Infracción = conducta', law:'La infracción se identifica por la conducta tipificada; las sanciones y medidas se aplican conforme al cuadro vigente.', plain:'No estudies solamente montos en soles.', practice:'Relaciona conducta, riesgo y consecuencia.', mistake:'Memorizar una UIT histórica como si fuera permanente.', source:'rnt'},
+            {title:'Seguro obligatorio', law:'El balotario incluye responsabilidad civil y seguros obligatorios de accidentes de tránsito como materia de evaluación.', plain:'El seguro forma parte del sistema de protección frente a daños derivados de siniestros.', practice:'Comprueba la vigencia antes de circular.', mistake:'Confundir tener póliza con estar exento de responsabilidades de conducción.', source:'banks'},
+            {title:'Primeros auxilios', law:'La evaluación oficial incluye nociones de primeros auxilios en caso de accidentes de tránsito.', plain:'El objetivo inicial es evitar nuevos riesgos y activar ayuda adecuada.', practice:'Señaliza, protege la escena y solicita asistencia.', mistake:'Mover a una persona lesionada sin necesidad inmediata o sin criterio de emergencia.', source:'banks'}
+          ]
+        }
+      ]
+    }
+  }
 };
