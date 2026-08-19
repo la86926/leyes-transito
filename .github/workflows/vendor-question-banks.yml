@@ -26,6 +26,58 @@ jobs:
           curl --fail --location --retry 3 "${BASE}/a1_questions.json" -o data/questions-auto.json
           curl --fail --location --retry 3 "${BASE}/b2b_questions.json" -o data/questions-moto.json
 
+      - name: Fetch pinned image source
+        shell: bash
+        run: |
+          set -euo pipefail
+          COMMIT='e14192f5f9debf15c4de39c435c8f8606887be05'
+          git clone --quiet --filter=blob:none https://github.com/gonzalo-droid/mtc-quiz.git /tmp/mtc-quiz
+          git -C /tmp/mtc-quiz checkout --quiet "$COMMIT"
+
+      - name: Vendor only images referenced by A-I and B-II-B
+        shell: python
+        run: |
+          import json, shutil
+          from pathlib import Path
+
+          src = Path('/tmp/mtc-quiz/app/src/main/assets/images')
+          dst = Path('assets/questions')
+          dst.mkdir(parents=True, exist_ok=True)
+
+          # Remove old vendored question images but keep the folder predictable.
+          for p in dst.iterdir():
+              if p.is_file():
+                  p.unlink()
+
+          requested = set()
+          for bank in ('data/questions-auto.json', 'data/questions-moto.json'):
+              payload = json.loads(Path(bank).read_text(encoding='utf-8'))
+              items = payload.get('data', payload) if isinstance(payload, dict) else payload
+              for q in items:
+                  for name in q.get('imagens', []) or []:
+                      requested.add(name)
+
+          manifest = {}
+          missing = []
+          for name in sorted(requested):
+              matches = [p for p in src.glob(name + '.*') if p.is_file()]
+              if not matches:
+                  missing.append(name)
+                  continue
+              chosen = matches[0]
+              target = dst / chosen.name
+              shutil.copy2(chosen, target)
+              manifest[name] = target.name
+
+          Path('data/question-images.json').write_text(
+              json.dumps(manifest, ensure_ascii=False, indent=2),
+              encoding='utf-8'
+          )
+          print(f'Images requested: {len(requested)}')
+          print(f'Images copied: {len(manifest)}')
+          if missing:
+              raise SystemExit('Missing referenced images: ' + ', '.join(missing))
+
       - name: Validate banks
         shell: python
         run: |
@@ -45,10 +97,10 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/questions-auto.json data/questions-moto.json
+          git add data/questions-auto.json data/questions-moto.json data/question-images.json assets/questions
           if git diff --cached --quiet; then
-            echo 'Question banks already up to date.'
+            echo 'Question banks and images already up to date.'
           else
-            git commit -m 'Add local MTC question banks'
+            git commit -m 'Add local MTC question images'
             git push
           fi
