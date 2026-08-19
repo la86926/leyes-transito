@@ -1,131 +1,679 @@
 (() => {
   const D = window.RUTA_DATA;
-  const $ = s => document.querySelector(s);
-  const $$ = s => [...document.querySelectorAll(s)];
+  const $ = (s, root = document) => root.querySelector(s);
+  const $$ = (s, root = document) => [...root.querySelectorAll(s)];
+
   const content = $('#content');
   const nav = $('#nav');
   const sidebar = $('#sidebar');
   const scrim = $('#scrim');
-  const storeKey = 'rutaPeruStateV2';
-  const defaultState = {theme:'system',collapsed:false,route:'home',lesson:null,completed:[],favorites:[],errors:[],lastLesson:null,caseDone:[]};
-  let state = {...defaultState,...readState()};
+  const storeKey = 'rutaPeruStudyV3';
 
-  function readState(){ try{return JSON.parse(localStorage.getItem(storeKey)||'{}')}catch{return {}} }
-  function saveState(){ localStorage.setItem(storeKey,JSON.stringify(state)); updateProgressUI(); }
-  function progress(){ const ids=D.lessons.map(x=>x.id); const done=state.completed.filter(x=>ids.includes(x)).length; return ids.length?Math.round(done/ids.length*100):0 }
-  function moduleProgress(m){ const ids=D.lessons.filter(x=>x.module===m).map(x=>x.id); const done=ids.filter(x=>state.completed.includes(x)).length; return {done,total:ids.length,pct:ids.length?Math.round(done/ids.length*100):0} }
-  function toast(text){const t=$('#toast');t.textContent=text;t.classList.add('show');clearTimeout(t._timer);t._timer=setTimeout(()=>t.classList.remove('show'),1400)}
+  const defaultState = {
+    theme: 'system',
+    vehicle: 'moto',
+    view: 'learn',
+    unit: null,
+    rule: 0,
+    bankIndex: { moto: 0, auto: 0 },
+    bankFilter: { moto: 'all', auto: 'all' },
+    bankTopic: { moto: '', auto: '' },
+    answers: {},
+    completedUnits: { moto: [], auto: [] },
+    sim: null
+  };
 
-  const labels={norm:'Norma verificada',recommendation:'Seguridad',pending:'Pendiente'};
-  const moduleSymbols={moto:'◉',auto:'▣',signs:'◇',rules:'↗',infractions:'△'};
+  const state = mergeState(readState());
+  const banks = { moto: null, auto: null };
+  let imageManifest = {};
+  let timerId = null;
 
-  function renderNav(){
-    nav.innerHTML=D.nav.map(g=>`<div class="nav-label">${g.group}</div>${g.items.map(([id,ic,label])=>{
-      const count=id==='errors'?state.errors.length:id==='favorites'?state.favorites.length:'';
-      return `<button data-route="${id}" class="${state.route===id?'active':''}"><span class="nav-icon">${ic}</span><span>${label}</span>${count!==''?`<span class="nav-count">${count}</span>`:''}</button>`
-    }).join('')}`).join('');
+  function mergeState(saved) {
+    return {
+      ...defaultState,
+      ...saved,
+      bankIndex: { ...defaultState.bankIndex, ...(saved.bankIndex || {}) },
+      bankFilter: { ...defaultState.bankFilter, ...(saved.bankFilter || {}) },
+      bankTopic: { ...defaultState.bankTopic, ...(saved.bankTopic || {}) },
+      answers: saved.answers || {},
+      completedUnits: {
+        moto: saved.completedUnits?.moto || [],
+        auto: saved.completedUnits?.auto || []
+      }
+    };
   }
 
-  function updateProgressUI(){
-    const p=progress(); const top=$('#topProgress'); if(top)top.textContent=p+'%'; const avatar=$('.avatar-button'); if(avatar)avatar.style.setProperty('--p',p+'%');
+  function readState() {
+    try { return JSON.parse(localStorage.getItem(storeKey) || '{}'); }
+    catch { return {}; }
+  }
+
+  function saveState() {
+    localStorage.setItem(storeKey, JSON.stringify(state));
+  }
+
+  function setTheme(theme) {
+    state.theme = theme;
+    document.documentElement.dataset.theme = theme;
+    saveState();
+    const btn = $('#themeBtn');
+    if (btn) btn.innerHTML = `${theme === 'light' ? '☀' : theme === 'dark' ? '☾' : '◐'} <span>${theme === 'system' ? 'Sistema' : theme === 'dark' ? 'Oscuro' : 'Claro'}</span>`;
+  }
+
+  function cycleTheme() {
+    const order = ['system', 'light', 'dark'];
+    setTheme(order[(order.indexOf(state.theme) + 1) % order.length]);
+  }
+
+  function vehicle() { return D.vehicles[state.vehicle]; }
+
+  function route(vehicleId, view = 'learn') {
+    if (!D.vehicles[vehicleId]) vehicleId = 'moto';
+    state.vehicle = vehicleId;
+    state.view = view;
+    state.unit = null;
+    state.rule = 0;
+    if (view !== 'sim') state.sim = null;
+    saveState();
+    history.replaceState(null, '', `#${vehicleId}/${view}`);
+    closeMobile();
+    render();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function openUnit(id) {
+    state.view = 'unit';
+    state.unit = id;
+    state.rule = 0;
+    state.sim = null;
+    saveState();
+    history.replaceState(null, '', `#${state.vehicle}/unit/${id}`);
+    render();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function parseHash() {
+    const parts = location.hash.replace(/^#/, '').split('/').filter(Boolean);
+    if (D.vehicles[parts[0]]) state.vehicle = parts[0];
+    if (['learn', 'bank', 'sim'].includes(parts[1])) state.view = parts[1];
+    if (parts[1] === 'unit' && parts[2]) {
+      state.view = 'unit';
+      state.unit = parts[2];
+    }
+  }
+
+  async function loadBank(vehicleId) {
+    if (banks[vehicleId]) return banks[vehicleId];
+    const v = D.vehicles[vehicleId];
+    try {
+      const response = await fetch(v.bankFile, { cache: 'no-store' });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const payload = await response.json();
+      const raw = Array.isArray(payload) ? payload : payload.data;
+      banks[vehicleId] = raw.map(normalizeQuestion);
+      return banks[vehicleId];
+    } catch (error) {
+      console.error('No se pudo cargar el balotario', error);
+      banks[vehicleId] = [];
+      return [];
+    }
+  }
+
+  async function loadManifest() {
+    try {
+      const response = await fetch('data/question-images.json', { cache: 'no-store' });
+      if (response.ok) imageManifest = await response.json();
+    } catch { imageManifest = {}; }
+  }
+
+  function normalizeQuestion(q) {
+    const answerLetter = String(q.answer || '').trim().toLowerCase();
+    const correct = Math.max(0, ['a', 'b', 'c', 'd'].indexOf(answerLetter));
+    return {
+      ...q,
+      id: Number(q.id),
+      title: cleanText(q.title || q.statement || ''),
+      options: (q.options || q.alternatives || []).map(cleanText),
+      correct,
+      topic: cleanText(q.topic || q.section || 'Materias generales'),
+      fundamento: cleanText(q.fundamento || ''),
+      imagens: q.imagens || (q.image ? [q.image] : []) || []
+    };
+  }
+
+  function cleanText(text) {
+    return String(text || '')
+      .replace(/\r?\n+/g, ' ')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
+  }
+
+  function optionText(text) {
+    return cleanText(text).replace(/^\s*[a-dA-D]\s*[\)\.\-:]\s*/, '');
+  }
+
+  function keyFor(vehicleId, q) { return `${vehicleId}:${q.id}`; }
+
+  function getAnswer(vehicleId, q) { return state.answers[keyFor(vehicleId, q)] || null; }
+
+  function currentAudit(q, vehicleId = state.vehicle) {
+    const text = `${q.title} ${q.options.join(' ')} ${q.fundamento}`.toLowerCase();
+
+    if (text.includes('actualizado por última vez en el año 2016') || text.includes('16- 2016-mtc') || text.includes('16-2016-mtc')) {
+      return {
+        level: 'obsolete',
+        title: 'Pregunta histórica desactualizada',
+        message: 'El balotario conserva una referencia al Manual 2016, pero el MTC aprobó una actualización del Manual de Dispositivos de Control de Tránsito Automotor mediante la R.D. N.° 26-2024-MTC/18. Esta pregunta no se usa para calcular tu dominio actual.',
+        source: 'manual'
+      };
+    }
+
+    const speedQuestion = /(velocidad|km\/h|kmh)/.test(text);
+    if (speedQuestion && text.includes('avenida') && (text.includes('60 km') || text.includes('60km'))) {
+      return {
+        level: 'obsolete',
+        title: 'Límite urbano actualizado',
+        message: 'El límite máximo general vigente en avenidas urbanas es 50 km/h. La referencia antigua de 60 km/h fue modificada por el D.S. N.° 025-2021-MTC.',
+        source: 'speed'
+      };
+    }
+
+    if (speedQuestion && /(calle|jirón|jiron)/.test(text) && (text.includes('40 km') || text.includes('40km'))) {
+      return {
+        level: 'obsolete',
+        title: 'Límite urbano actualizado',
+        message: 'El límite máximo general vigente en calles y jirones es 30 km/h. La referencia antigua de 40 km/h fue modificada por el D.S. N.° 025-2021-MTC.',
+        source: 'speed'
+      };
+    }
+
+    if (vehicleId === 'moto' && /(casco|chaleco|lentes protectores)/.test(text)) {
+      return {
+        level: 'review',
+        title: 'Revisada con normativa de motocicletas 2025',
+        message: 'Las reglas técnicas sobre casco, lentes y determinadas obligaciones vinculadas al chaleco tuvieron modificaciones posteriores al balotario B-II-B. Conservamos la pregunta para estudiar, pero la explicación prioriza la regulación vigente.',
+        source: 'helmet'
+      };
+    }
+
+    if (/s\/\s*\d|s\.\/|soles|uit/.test(text)) {
+      return {
+        level: 'review',
+        title: 'No memorices el monto histórico',
+        message: 'Los montos expresados en soles pueden cambiar con la UIT o con modificaciones normativas. Aprende primero la conducta, el código y el porcentaje o consecuencia legal aplicable.',
+        source: 'rnt'
+      };
+    }
+
+    return { level: 'current', title: 'Vigencia revisada', message: 'No se detectó en esta pregunta una referencia histórica conocida que contradiga las actualizaciones incorporadas al curso.', source: q.fundamento ? 'rnt' : 'banks' };
+  }
+
+  function explanationFor(q, audit) {
+    const correct = optionText(q.options[q.correct] || '');
+    const t = q.title.toLowerCase();
+
+    if (audit.level === 'obsolete') {
+      return `${audit.message} El balotario histórico marcaba como respuesta “${correct}”, pero para estudiar hoy debes retener la regla vigente indicada arriba.`;
+    }
+    if (/semáforo|semaforo|luz ámbar|luz amarilla/.test(t)) {
+      return `La respuesta correcta es “${correct}”. En un semáforo, cada fase regula la entrada a la intersección; el ámbar no es una invitación a acelerar, sino una advertencia para detenerse cuando puede hacerse con seguridad.`;
+    }
+    if (/señal|manual de dispositivos|marcas en el pavimento|línea|linea/.test(t)) {
+      return `La respuesta correcta es “${correct}”. Esta pregunta evalúa que interpretes la señalización como una regla de circulación, no como un dibujo aislado. Identifica primero si regula, previene o informa y luego aplica la maniobra correspondiente.`;
+    }
+    if (/prioridad|derecho de paso|intersección|interseccion|policía|policia/.test(t)) {
+      return `La respuesta correcta es “${correct}”. La clave es resolver el conflicto antes de ingresar a la intersección: observa autoridad, señalización, semáforo y prioridad aplicable, y recién después ejecuta la maniobra.`;
+    }
+    if (/velocidad|km\/h|kmh/.test(t)) {
+      return `La respuesta del balotario es “${correct}”. En preguntas de velocidad, verifica siempre si el valor sigue vigente: hoy la referencia urbana general es 30 km/h en calles y jirones y 50 km/h en avenidas, salvo señalización específica.`;
+    }
+    if (/licencia|documento|soat|tarjeta|inspección|inspeccion/.test(t)) {
+      return `La respuesta correcta es “${correct}”. La pregunta busca que distingas qué documento, habilitación o condición debe existir antes de circular. No esperes a una intervención para comprobar vigencias.`;
+    }
+    if (/adelant|carril|giro|voltear|direccional|dirección/.test(t)) {
+      return `La respuesta correcta es “${correct}”. Estas maniobras deben ser previsibles: observa, señaliza con anticipación, verifica espacio y puntos de conflicto, y ejecuta solo cuando sea seguro y esté permitido.`;
+    }
+    if (/alcohol|alcoholemia|estupefaciente/.test(t)) {
+      return `La respuesta correcta es “${correct}”. El control busca determinar si el conductor mantiene aptitud para conducir. En la práctica, la decisión segura es no conducir después de consumir alcohol o sustancias que alteren la capacidad.`;
+    }
+    if (/accidente|primeros auxilios|herid|lesion/.test(t)) {
+      return `La respuesta correcta es “${correct}”. Frente a un siniestro, primero evita un segundo accidente, solicita ayuda y no realices maniobras que puedan agravar lesiones sin necesidad inmediata.`;
+    }
+    return `La respuesta correcta es “${correct}”. Léela como una regla práctica: identifica qué conducta exige o prohíbe la pregunta y descarta las alternativas que cambian esa obligación, añaden una excepción inexistente o describen una conducta riesgosa.`;
+  }
+
+  function renderNav() {
+    nav.innerHTML = D.nav.map(group => `${group.items.map(([id, icon, label]) => `
+      <button data-vehicle="${id}" class="${state.vehicle === id ? 'active' : ''}">
+        <span class="nav-icon">${icon}</span><span>${label}</span>
+      </button>`).join('')}`).join('');
+  }
+
+  function prepareShell() {
+    document.body.classList.add('study-shell');
+    const search = $('.search-wrap');
+    if (search) search.innerHTML = `<div class="top-context"><span id="topVehicleIcon">🏍️</span><div><b id="topVehicle">Motocicleta</b><small id="topPath">Aprender</small></div></div>`;
+    const avatar = $('.avatar-button');
+    if (avatar) avatar.style.display = 'none';
+    const sourceFoot = $('.mini-action[data-route="sources"]');
+    if (sourceFoot) sourceFoot.remove();
+    const brand = $('.brand');
+    if (brand) {
+      brand.removeAttribute('data-route');
+      brand.addEventListener('click', () => route(state.vehicle, 'learn'));
+    }
+    const mobile = $('.mobile-tabs');
+    if (mobile) mobile.innerHTML = `
+      <button data-mobile-vehicle="moto"><span>🏍</span>Motocicleta</button>
+      <button data-mobile-vehicle="auto"><span>🚗</span>Automóvil</button>`;
+  }
+
+  function updateShell() {
     renderNav();
+    const v = vehicle();
+    const icon = $('#topVehicleIcon');
+    const name = $('#topVehicle');
+    const path = $('#topPath');
+    if (icon) icon.textContent = v.icon;
+    if (name) name.textContent = v.title;
+    if (path) path.textContent = state.view === 'unit' ? 'Aprender' : state.view === 'bank' ? 'Banco oficial' : state.view === 'sim' ? 'Simulacro' : 'Aprender';
+    $$('[data-mobile-vehicle]').forEach(b => b.classList.toggle('active', b.dataset.mobileVehicle === state.vehicle));
   }
 
-  function route(id){
-    state.route=id; if(id!=='lesson')state.lesson=null; saveState(); closeMobile();
-    history.replaceState(null,'','#'+id); render(); window.scrollTo({top:0,behavior:'smooth'});
-  }
-  function openLesson(id){state.route='lesson';state.lesson=id;state.lastLesson=id;saveState();history.replaceState(null,'','#lesson/'+id);render();window.scrollTo({top:0,behavior:'smooth'})}
-
-  function home(){
-    const p=progress(); const last=D.lessons.find(x=>x.id===state.lastLesson)||D.lessons[0];
-    return `<div class="hero">
-      <div class="hero-main"><span class="eyebrow">Minicurso de tránsito · Perú</span><h1>Normas claras.<br>Decisiones seguras.</h1><p>Aprende lo que necesitas en la vía, con la norma explicada en lenguaje práctico y la fuente integrada dentro del curso.</p><div class="hero-actions"><button class="primary-btn" data-open-lesson="${last.id}">${state.lastLesson?'Continuar estudiando':'Empezar por motocicleta'} →</button><button class="secondary-btn" data-route="sources">Explorar fuentes</button></div></div>
-      <aside class="hero-card"><div><div class="progress-ring" style="--p:${p}%"><b>${p}%</b></div><h3>Tu recorrido</h3><p>${state.completed.length} lecciones completadas · ${state.errors.length} preguntas por repasar</p></div><p><b>Revisión normativa:</b> ${D.meta.reviewed}</p></aside>
-    </div>
-    <div class="section-head"><div><span class="eyebrow">Tu curso</span><h2>Estudia por bloques</h2></div><p>La motocicleta tiene prioridad en esta primera etapa.</p></div>
-    <div class="card-grid">${Object.entries(D.modules).map(([id,m])=>{const mp=moduleProgress(id);return `<article class="module-card ${m.tone||''}" data-module="${id}"><div class="module-icon">${moduleSymbols[id]||'•'}</div><h3>${m.title}</h3><p>${m.description}</p><div class="module-meta"><div class="mini-bar"><i style="width:${mp.pct}%"></i></div><span>${mp.done}/${mp.total}</span></div></article>`}).join('')}</div>
-    <div class="section-head"><div><span class="eyebrow">Estado</span><h2>Lo importante de un vistazo</h2></div></div>
-    <div class="quick-strip"><div class="quick-stat"><b>${D.lessons.filter(x=>x.status==='norm').length}</b><small>lecciones verificadas</small></div><div class="quick-stat"><b>${Object.keys(D.sources).length}</b><small>fuentes integradas</small></div><div class="quick-stat"><b>${state.favorites.length}</b><small>favoritos</small></div><div class="quick-stat"><b>${p}%</b><small>progreso general</small></div></div>`;
+  function tabs() {
+    return `<div class="study-tabs" role="tablist">
+      <button class="${state.view === 'learn' || state.view === 'unit' ? 'active' : ''}" data-view="learn">Aprender</button>
+      <button class="${state.view === 'bank' ? 'active' : ''}" data-view="bank">Banco oficial</button>
+      <button class="${state.view === 'sim' ? 'active' : ''}" data-view="sim">Simulacro</button>
+    </div>`;
   }
 
-  function modulePage(id){
-    const m=D.modules[id]; const lessons=D.lessons.filter(x=>x.module===id); const mp=moduleProgress(id);
-    return `<header class="page-head"><div><span class="eyebrow">${moduleSymbols[id]||'•'} Módulo · ${mp.pct}% completado</span><h1>${m.title}</h1><p>${m.subtitle} ${m.description}</p></div></header>
-      <div class="lesson-list">${lessons.map((l,i)=>`<button class="lesson-row" data-open-lesson="${l.id}"><div class="lesson-number">${state.completed.includes(l.id)?'✓':String(i+1).padStart(2,'0')}</div><div><h3>${l.title}</h3><p>${l.summary}</p></div><span class="status-pill ${l.status}">${labels[l.status]}</span></button>`).join('')||empty('Aún no hay lecciones publicadas en este módulo.')}</div>`;
+  function courseProgress(vehicleId) {
+    const total = D.vehicles[vehicleId].units.length;
+    const done = state.completedUnits[vehicleId].length;
+    return { total, done, pct: total ? Math.round(done / total * 100) : 0 };
   }
 
-  function lessonPage(id){
-    const l=D.lessons.find(x=>x.id===id); if(!l)return empty('Lección no encontrada.');
-    const isFav=state.favorites.includes(id), done=state.completed.includes(id);
-    const steps=[['1','Qué establece la norma',l.steps.law],['2','Qué significa',l.steps.meaning],['3','Cómo se aplica',l.steps.practice],['4','Ejemplo',l.steps.example],['5','Error frecuente',l.steps.mistake]].filter(x=>x[2]);
-    return `<div class="lesson-layout"><article class="lesson-article"><div class="lesson-top"><div><button class="ghost-btn" data-route="${l.module}">← ${D.modules[l.module]?.title||'Volver'}</button><br><span class="eyebrow">${labels[l.status]}</span><h1>${l.title}</h1></div><button class="favorite-btn ${isFav?'saved':''}" data-favorite="${id}" aria-label="Guardar favorito">${isFav?'★':'☆'}</button></div>
-      <section class="legal-block" id="resumen"><h2>La idea clave</h2><p>${l.summary}</p></section>
-      <div class="five-step">${steps.map(s=>`<section class="step-card"><div class="step-icon">${s[0]}</div><div><h3>${s[1]}</h3><p>${s[2]}</p></div></section>`).join('')}</div>
-      ${l.practice?`<div class="callout practice" id="practica"><b>En la práctica</b>${l.practice}</div>`:''}
-      ${l.warning?`<div class="callout warn" id="cuidado"><b>Cuidado con esto</b>${l.warning}</div>`:''}
-      <section id="fuentes"><span class="eyebrow">Trazabilidad</span>${(l.sources||[]).map(s=>sourceButton(s)).join('')}</section>
-      ${l.quiz?quizBlock(l):''}
-      <div style="display:flex;gap:8px;margin-top:18px;flex-wrap:wrap"><button class="primary-btn" data-complete="${id}">${done?'✓ Lección completada':'Marcar como aprendida'}</button><button class="secondary-btn" data-route="${l.module}">Volver al módulo</button></div>
-      </article><aside class="lesson-aside"><div class="aside-card"><h3>En esta lección</h3><button data-jump="resumen">Idea clave</button><button data-jump="practica">En la práctica</button><button data-jump="cuidado">Cuidado</button><button data-jump="fuentes">Fuentes</button>${l.quiz?'<button data-jump="pregunta">Pregunta rápida</button>':''}</div></aside></div>`;
+  function learnPage() {
+    const v = vehicle();
+    const p = courseProgress(state.vehicle);
+    return `
+      <header class="course-head">
+        <div><span class="eyebrow">${v.license}</span><h1>${v.icon} ${v.title}</h1><p>${v.intro}</p></div>
+        <div class="course-progress"><b>${p.pct}%</b><span>Curso aprendido</span><div class="progress-line"><i style="width:${p.pct}%"></i></div></div>
+      </header>
+      ${tabs()}
+      <section class="learning-intro"><div><span class="step-kicker">Ruta recomendada</span><h2>Aprende en este orden</h2><p>No necesitas saltar entre señales, multas y artículos. Son seis unidades y cada una muestra una regla a la vez.</p></div><div class="bank-chip"><b>${v.questionCount}</b><span>preguntas del balotario después</span></div></section>
+      <div class="unit-list">
+        ${v.units.map((u, i) => {
+          const done = state.completedUnits[state.vehicle].includes(u.id);
+          return `<button class="unit-row ${done ? 'done' : ''}" data-unit="${u.id}">
+            <span class="unit-number">${done ? '✓' : String(i + 1).padStart(2, '0')}</span>
+            <span class="unit-copy"><small>Unidad ${i + 1}</small><b>${u.title}</b><em>${u.subtitle}</em></span>
+            <span class="unit-go">→</span>
+          </button>`;
+        }).join('')}
+      </div>
+      <div class="sequence-note"><b>Orden pedagógico</b><span>Curso → banco completo → simulacro. Así entiendes primero y memorizas después.</span></div>`;
   }
 
-  function sourceButton(id){const s=D.sources[id];return s?`<button class="source-button" data-source="${id}"><span><b>${s.norm}</b><small>${s.entity} · ${s.date}</small></span><span>Ver ficha →</span></button>`:''}
-  function quizBlock(l){return `<section class="quiz-card" id="pregunta" data-quiz="${l.id}"><span class="eyebrow">Pregunta rápida</span><h3>${l.quiz.q}</h3>${l.quiz.options.map((o,i)=>`<button class="quiz-option" data-answer="${i}">${String.fromCharCode(65+i)}. ${o}</button>`).join('')}<div class="feedback" hidden></div></section>`}
+  function unitPage() {
+    const v = vehicle();
+    const unit = v.units.find(u => u.id === state.unit);
+    if (!unit) { state.view = 'learn'; return learnPage(); }
+    const index = Math.min(Math.max(0, state.rule || 0), unit.rules.length - 1);
+    state.rule = index;
+    const rule = unit.rules[index];
+    const source = D.sources[rule.source];
+    const isLast = index === unit.rules.length - 1;
+    const done = state.completedUnits[state.vehicle].includes(unit.id);
 
-  function casesPage(){return `<header class="page-head"><div><span class="eyebrow">◈ Decidir antes de leer</span><h1>Casos prácticos</h1><p>Situaciones breves para entrenar decisiones reales de conducción.</p></div></header>${D.cases.map(c=>`<article class="case-card" data-case="${c.id}"><div class="case-scene">🚦</div><span class="eyebrow">Situación</span><h2>${c.title}</h2><p style="color:var(--muted)">${c.text}</p><h3>${c.q}</h3>${c.options.map((o,i)=>`<button class="quiz-option" data-case-answer="${i}">${String.fromCharCode(65+i)}. ${o}</button>`).join('')}<div class="feedback" hidden></div><button class="source-button" data-source="${c.source}"><span><b>Ver fundamento integrado</b><small>Sin salir del minicurso</small></span><span>→</span></button></article>`).join('')}`}
-
-  function quizPage(){const qs=D.lessons.filter(x=>x.quiz);return `<header class="page-head"><div><span class="eyebrow">✓ Práctica rápida</span><h1>Evaluación</h1><p>Responde y recibe retroalimentación inmediata. Tus errores quedan guardados para repasar.</p></div></header>${qs.map(l=>`<div style="margin-bottom:14px">${quizBlock(l)}</div>`).join('')}`}
-  function errorsPage(){const items=state.errors.map(id=>D.lessons.find(x=>x.id===id)).filter(Boolean);return `<header class="page-head"><div><span class="eyebrow">! Repaso inteligente</span><h1>Mis errores</h1><p>Aquí aparecen las preguntas que respondiste incorrectamente.</p></div></header>${items.length?`<div class="lesson-list">${items.map(l=>`<button class="lesson-row" data-open-lesson="${l.id}"><div class="lesson-number">!</div><div><h3>${l.title}</h3><p>Vuelve a leer la explicación y reintenta la pregunta.</p></div><span class="status-pill">Repasar</span></button>`).join('')}</div>`:empty('Aún no tienes preguntas falladas.')}`}
-  function favoritesPage(){const items=state.favorites.map(id=>D.lessons.find(x=>x.id===id)).filter(Boolean);return `<header class="page-head"><div><span class="eyebrow">☆ Tu biblioteca</span><h1>Favoritos</h1><p>Normas y conceptos guardados para consulta rápida.</p></div></header>${items.length?`<div class="lesson-list">${items.map(l=>`<button class="lesson-row" data-open-lesson="${l.id}"><div class="lesson-number">★</div><div><h3>${l.title}</h3><p>${l.summary}</p></div></button>`).join('')}</div>`:empty('Guarda una lección con la estrella para verla aquí.')}`}
-  function sourcesPage(){return `<header class="page-head"><div><span class="eyebrow">ⓘ Biblioteca normativa</span><h1>Fuentes oficiales</h1><p>Las fichas esenciales están integradas en la web. Abrir el documento original queda como opción de verificación, no como requisito para estudiar.</p></div></header><div class="callout info"><b>Revisión legal</b>Las fichas se cotejaron hasta ${D.meta.reviewed}. La legislación puede cambiar después de esa fecha.</div><div class="source-grid">${Object.entries(D.sources).map(([id,s])=>`<button class="source-card" data-source="${id}"><span class="eyebrow">${s.status}</span><h3>${s.norm}</h3><p>${s.title}</p><div class="source-meta">${s.entity} · ${s.date}</div></button>`).join('')}</div>`}
-  function infractionsPage(){return `<header class="page-head"><div><span class="eyebrow">△ Sanciones verificadas</span><h1>Infracciones clave</h1><p>Solo se muestran sanciones suficientemente verificadas para la fecha de revisión.</p></div></header>${D.infractions.map(i=>`<article class="infra-card"><div class="infra-top"><div><span class="infra-code">${i.code}</span><h3>${i.title}</h3></div><span class="status-pill">${i.level}</span></div><div class="facts"><div class="fact"><small>Sanción</small><b>${i.sanction}</b></div><div class="fact"><small>2026</small><b>${i.amount2026}</b></div><div class="fact"><small>Puntos</small><b>${i.points}</b></div><div class="fact"><small>Medida</small><b>${i.measure}</b></div></div><p style="color:var(--muted);font-size:11px">${i.note}</p><button class="source-button" data-source="${i.source}"><span><b>Ver fundamento integrado</b><small>Fuente oficial resumida dentro de la app</small></span><span>→</span></button></article>`).join('')}<div class="callout warn"><b>Importante</b>Los montos en soles dependen del valor de la UIT del año. La app conserva también el porcentaje legal para facilitar futuras actualizaciones.</div>`}
-  function progressPage(){const p=progress();return `<header class="page-head"><div><span class="eyebrow">◌ Aprendizaje local</span><h1>Mi progreso</h1><p>Todo se guarda en este navegador mediante localStorage. No necesitas cuenta.</p></div></header><div class="hero-card" style="max-width:560px"><div><div class="progress-ring" style="--p:${p}%"><b>${p}%</b></div><h3>${state.completed.length} lecciones completadas</h3><p>${state.errors.length} errores por repasar · ${state.favorites.length} favoritos guardados</p></div></div>`}
-  function empty(text){return `<div class="empty-state"><h3>Todo limpio por aquí</h3><p>${text}</p></div>`}
-
-  function render(){
-    renderNav(); const r=state.route; let html='';
-    if(r==='home')html=home(); else if(['moto','auto','signs','rules'].includes(r))html=modulePage(r); else if(r==='lesson')html=lessonPage(state.lesson); else if(r==='cases')html=casesPage(); else if(r==='quiz')html=quizPage(); else if(r==='errors')html=errorsPage(); else if(r==='favorites')html=favoritesPage(); else if(r==='sources')html=sourcesPage(); else if(r==='infractions')html=infractionsPage(); else if(r==='progress')html=progressPage(); else html=home();
-    content.innerHTML=html; bindContent(); updateProgressUI(); updateMobileTabs();
+    return `
+      <button class="back-link" data-view="learn">← Volver a las unidades</button>
+      <header class="lesson-head-simple"><div><span class="eyebrow">${v.title} · ${unit.title}</span><h1>${rule.title}</h1></div><div class="lesson-count">${index + 1} / ${unit.rules.length}</div></header>
+      <div class="lesson-meter"><i style="width:${((index + 1) / unit.rules.length) * 100}%"></i></div>
+      <article class="focus-lesson">
+        <section class="focus-block law"><span>Norma vigente</span><p>${rule.law}</p></section>
+        <section class="focus-block plain"><span>En sencillo</span><p>${rule.plain}</p></section>
+        <div class="focus-two">
+          <section class="focus-block practice"><span>En la práctica</span><p>${rule.practice}</p></section>
+          <section class="focus-block mistake"><span>Error típico</span><p>${rule.mistake}</p></section>
+        </div>
+        <details class="source-disclosure"><summary>Fuente y vigencia</summary><div><b>${source?.norm || 'Fuente oficial'}</b><p>${source?.note || ''}</p>${source?.url ? `<a href="${source.url}" target="_blank" rel="noopener">Comprobar en fuente oficial ↗</a>` : ''}</div></details>
+      </article>
+      <div class="lesson-actions">
+        <button class="secondary-btn" data-rule-prev ${index === 0 ? 'disabled' : ''}>← Anterior</button>
+        ${isLast ? `<button class="primary-btn" data-unit-complete="${unit.id}">${done ? '✓ Unidad aprendida' : 'Completar unidad ✓'}</button>` : `<button class="primary-btn" data-rule-next>Siguiente →</button>`}
+      </div>`;
   }
 
-  function bindContent(){
-    $$('[data-module]').forEach(x=>x.onclick=()=>route(x.dataset.module));
-    $$('[data-open-lesson]').forEach(x=>x.onclick=()=>openLesson(x.dataset.openLesson));
-    $$('[data-source]').forEach(x=>x.onclick=e=>{e.stopPropagation();openSource(x.dataset.source)});
-    $$('[data-complete]').forEach(x=>x.onclick=()=>{const id=x.dataset.complete;if(state.completed.includes(id))state.completed=state.completed.filter(v=>v!==id);else state.completed.push(id);saveState();toast(state.completed.includes(id)?'Lección completada':'Marcada como pendiente');render()});
-    $$('[data-favorite]').forEach(x=>x.onclick=()=>{const id=x.dataset.favorite;if(state.favorites.includes(id))state.favorites=state.favorites.filter(v=>v!==id);else state.favorites.push(id);saveState();toast(state.favorites.includes(id)?'Guardado en favoritos':'Quitado de favoritos');render()});
-    $$('[data-jump]').forEach(x=>x.onclick=()=>document.getElementById(x.dataset.jump)?.scrollIntoView({behavior:'smooth',block:'start'}));
-    $$('.quiz-card').forEach(card=>{const l=D.lessons.find(x=>x.id===card.dataset.quiz);if(!l)return;card.querySelectorAll('[data-answer]').forEach(btn=>btn.onclick=()=>answerQuiz(card,l,+btn.dataset.answer))});
-    $$('[data-case]').forEach(card=>{const c=D.cases.find(x=>x.id===card.dataset.case);card.querySelectorAll('[data-case-answer]').forEach(btn=>btn.onclick=()=>answerCase(card,c,+btn.dataset.caseAnswer))});
-    $$('[data-route]').forEach(b=>b.onclick=()=>route(b.dataset.route));
+  function topicOptions(bank) {
+    return [...new Set(bank.map(q => q.topic).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
   }
 
-  function answerQuiz(card,l,choice){
-    const buttons=[...card.querySelectorAll('[data-answer]')];buttons.forEach((b,i)=>{b.disabled=true;if(i===l.quiz.answer)b.classList.add('correct');if(i===choice&&i!==l.quiz.answer)b.classList.add('wrong')});
-    const ok=choice===l.quiz.answer;const fb=card.querySelector('.feedback');fb.hidden=false;fb.innerHTML=`<b>${ok?'Correcto':'Revisa esta idea'}</b><br>${l.quiz.why}`;
-    if(ok)state.errors=state.errors.filter(x=>x!==l.id);else if(!state.errors.includes(l.id))state.errors.push(l.id);saveState();toast(ok?'Respuesta correcta':'Guardado en Mis errores');
+  function filteredBank(vehicleId) {
+    const bank = banks[vehicleId] || [];
+    const filter = state.bankFilter[vehicleId];
+    const topic = state.bankTopic[vehicleId];
+    return bank.filter(q => {
+      if (topic && q.topic !== topic) return false;
+      const ans = getAnswer(vehicleId, q);
+      if (filter === 'wrong' && !(ans && ans.correct === false)) return false;
+      if (filter === 'unanswered' && ans) return false;
+      return true;
+    });
   }
-  function answerCase(card,c,choice){const buttons=[...card.querySelectorAll('[data-case-answer]')];buttons.forEach((b,i)=>{b.disabled=true;if(i===c.answer)b.classList.add('correct');if(i===choice&&i!==c.answer)b.classList.add('wrong')});const fb=card.querySelector('.feedback');fb.hidden=false;fb.innerHTML=`<b>${choice===c.answer?'Correcto':'No sería la decisión adecuada'}</b><br>${c.why}`;if(!state.caseDone.includes(c.id))state.caseDone.push(c.id);saveState()}
 
-  function openSource(id){const s=D.sources[id];if(!s)return;$('#sourceTitle').textContent=s.norm;$('#sourceBody').innerHTML=`<p style="color:var(--muted);margin-top:5px">${s.title}</p><div class="source-facts"><div class="fact"><small>Entidad</small><b>${s.entity}</b></div><div class="fact"><small>Fecha</small><b>${s.date}</b></div><div class="fact"><small>Estado</small><b>${s.status}</b></div></div><div class="callout info"><b>Lectura integrada</b>Estos puntos están guardados dentro de la aplicación para que puedas estudiar sin abandonar la página.</div><div>${s.digest.map(x=>`<div class="digest-item">${x}</div>`).join('')}</div><div class="fact"><small>Referencias</small><b>${(s.refs||[]).join(' · ')}</b></div><a class="external-link" href="${s.url}" target="_blank" rel="noopener">Abrir fuente oficial original ↗</a>`;$('#sourceModal').hidden=false;document.body.style.overflow='hidden'}
-  function closeSource(){$('#sourceModal').hidden=true;document.body.style.overflow=''}
+  function questionImages(q) {
+    if (!q.imagens?.length) return '';
+    const imgs = q.imagens.map(name => {
+      const clean = String(name).replace(/^.*\//, '').replace(/\.[^.]+$/, '');
+      const file = imageManifest[clean];
+      return file ? `<img src="assets/questions/${file}" alt="Imagen de la pregunta ${q.id}" loading="lazy">` : '';
+    }).filter(Boolean);
+    return imgs.length ? `<div class="question-images">${imgs.join('')}</div>` : `<div class="image-pending">Esta pregunta contiene una imagen del balotario. La copia visual está siendo integrada al curso.</div>`;
+  }
 
-  function search(q){q=q.trim().toLowerCase();const box=$('#searchResults');if(!q){box.hidden=true;return}const pool=D.lessons.filter(l=>`${l.title} ${l.summary} ${Object.values(l.steps).join(' ')}`.toLowerCase().includes(q)).slice(0,7);box.innerHTML=pool.length?pool.map(l=>`<button class="search-result" data-search-lesson="${l.id}"><b>${l.title}</b><small>${D.modules[l.module]?.title||''} · ${labels[l.status]}</small></button>`).join(''):`<div class="search-result"><b>Sin coincidencias</b><small>Prueba con otra palabra.</small></div>`;box.hidden=false;$$('[data-search-lesson]').forEach(b=>b.onclick=()=>{box.hidden=true;$('#searchInput').value='';openLesson(b.dataset.searchLesson)})}
-  function closeMobile(){sidebar.classList.remove('open');scrim.classList.remove('show')}
-  function updateMobileTabs(){$$('.mobile-tabs [data-route]').forEach(b=>b.classList.toggle('active',state.route===b.dataset.route))}
-  function setTheme(t){state.theme=t;document.documentElement.dataset.theme=t;saveState();toast(`Tema: ${t==='system'?'sistema':t==='dark'?'oscuro':'claro'}`)}
-  function cycleTheme(){const order=['system','light','dark'];setTheme(order[(order.indexOf(state.theme)+1)%order.length])}
+  function bankPage() {
+    const v = vehicle();
+    const bank = banks[state.vehicle] || [];
+    if (!bank.length) return loadingPage('Cargando balotario…');
 
-  document.addEventListener('click',e=>{const r=e.target.closest('[data-route]');if(r)route(r.dataset.route)});
-  $('#menuBtn').onclick=()=>{sidebar.classList.add('open');scrim.classList.add('show')};scrim.onclick=closeMobile;
-  $('#collapseBtn').onclick=()=>{state.collapsed=!state.collapsed;sidebar.classList.toggle('compact',state.collapsed);saveState()};
-  $('#themeBtn').onclick=cycleTheme;$('#closeSourceBtn').onclick=closeSource;$('#sourceModal').onclick=e=>{if(e.target.id==='sourceModal')closeSource()};
-  $('#searchInput').addEventListener('input',e=>search(e.target.value));
-  document.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();$('#searchInput').focus()}if(e.key==='Escape'){closeSource();$('#searchResults').hidden=true;closeMobile()}});
-  $('#moreBtn').onclick=()=>{sidebar.classList.add('open');scrim.classList.add('show')};
+    const list = filteredBank(state.vehicle);
+    const topics = topicOptions(bank);
+    if (!list.length) return `
+      <header class="course-head compact"><div><span class="eyebrow">${v.license}</span><h1>Banco oficial</h1><p>No hay preguntas que coincidan con el filtro actual.</p></div></header>${tabs()}
+      <button class="primary-btn" data-reset-filters>Mostrar todas las preguntas</button>`;
 
-  document.documentElement.dataset.theme=state.theme;sidebar.classList.toggle('compact',state.collapsed);
-  const h=location.hash.replace(/^#/,'');if(h.startsWith('lesson/')){state.route='lesson';state.lesson=h.split('/')[1]}else if(h)state.route=h;
-  render();
+    let index = state.bankIndex[state.vehicle] || 0;
+    if (index >= list.length) index = 0;
+    state.bankIndex[state.vehicle] = index;
+    const q = list[index];
+    const saved = getAnswer(state.vehicle, q);
+    const audit = currentAudit(q);
+    const answeredCount = bank.filter(x => getAnswer(state.vehicle, x)).length;
+    const wrongCount = bank.filter(x => getAnswer(state.vehicle, x)?.correct === false).length;
+
+    return `
+      <header class="course-head compact"><div><span class="eyebrow">${v.license}</span><h1>Banco oficial MTC</h1><p>${v.questionCount} preguntas en copia local para estudiar sin salir de Ruta Perú. Las referencias antiguas conocidas se marcan antes de que las memorices.</p></div><div class="bank-stats"><b>${answeredCount}</b><span>respondidas</span><small>${wrongCount} por repasar</small></div></header>
+      ${tabs()}
+      <div class="bank-toolbar">
+        <div class="bank-filters">
+          <button class="filter-pill ${state.bankFilter[state.vehicle] === 'all' ? 'active' : ''}" data-filter="all">Todas</button>
+          <button class="filter-pill ${state.bankFilter[state.vehicle] === 'unanswered' ? 'active' : ''}" data-filter="unanswered">Pendientes</button>
+          <button class="filter-pill ${state.bankFilter[state.vehicle] === 'wrong' ? 'active' : ''}" data-filter="wrong">Falladas${wrongCount ? ` · ${wrongCount}` : ''}</button>
+        </div>
+        <select class="topic-select" id="topicSelect" aria-label="Filtrar por tema"><option value="">Todos los temas</option>${topics.map(t => `<option value="${escapeAttr(t)}" ${state.bankTopic[state.vehicle] === t ? 'selected' : ''}>${escapeHTML(t)}</option>`).join('')}</select>
+      </div>
+      ${questionCard(q, index, list.length, saved, audit, false)}
+      <div class="bank-nav"><button class="secondary-btn" data-bank-prev ${index === 0 ? 'disabled' : ''}>← Anterior</button><button class="secondary-btn" data-random-question>Aleatoria</button><button class="primary-btn" data-bank-next>${index === list.length - 1 ? 'Volver al inicio' : 'Siguiente →'}</button></div>`;
+  }
+
+  function questionCard(q, index, total, saved, audit, simulation) {
+    const statusClass = audit.level === 'obsolete' ? 'obsolete' : audit.level === 'review' ? 'review' : 'current';
+    return `<article class="question-card ${simulation ? 'simulation-card' : ''}" data-question-id="${q.id}">
+      <div class="question-meta"><span>Pregunta ${index + 1} de ${total}</span><span class="audit-badge ${statusClass}">${audit.level === 'obsolete' ? 'Desactualizada' : audit.level === 'review' ? 'Revisar vigencia' : 'Vigencia revisada'}</span></div>
+      <div class="question-progress"><i style="width:${((index + 1) / total) * 100}%"></i></div>
+      <small class="question-topic">${escapeHTML(q.topic)}</small>
+      <h2>${escapeHTML(q.title)}</h2>
+      ${questionImages(q)}
+      <div class="answers-list">${q.options.map((o, i) => {
+        let cls = '';
+        if (saved) {
+          if (i === q.correct) cls = 'correct';
+          else if (i === saved.choice && !saved.correct) cls = 'wrong';
+        }
+        return `<button class="answer-option ${cls}" data-choice="${i}" ${saved && !simulation ? 'disabled' : ''}><span>${String.fromCharCode(65 + i)}</span><b>${escapeHTML(optionText(o))}</b></button>`;
+      }).join('')}</div>
+      ${saved && !simulation ? feedbackBlock(q, saved, audit) : ''}
+    </article>`;
+  }
+
+  function feedbackBlock(q, saved, audit) {
+    const explanation = explanationFor(q, audit);
+    return `<section class="answer-feedback ${saved.correct ? 'ok' : 'no'}">
+      <div class="feedback-title"><span>${saved.correct ? '✓' : '×'}</span><div><b>${saved.correct ? 'Correcto' : 'Revisa esta idea'}</b><small>${saved.correct ? 'Bien razonado.' : `La respuesta del balotario es ${String.fromCharCode(65 + q.correct)}.`}</small></div></div>
+      <div class="explanation"><b>Por qué</b><p>${escapeHTML(explanation)}</p></div>
+      ${q.fundamento ? `<div class="foundation"><b>Fundamento del balotario</b><span>${escapeHTML(q.fundamento)}</span></div>` : ''}
+      ${audit.level !== 'current' ? `<div class="audit-note ${audit.level}"><b>${audit.title}</b><p>${audit.message}</p></div>` : ''}
+    </section>`;
+  }
+
+  function simulationPage() {
+    const v = vehicle();
+    const bank = banks[state.vehicle] || [];
+    if (!bank.length) return loadingPage('Preparando simulacro…');
+
+    if (!state.sim || state.sim.vehicle !== state.vehicle) {
+      const eligible = bank.filter(q => currentAudit(q).level !== 'obsolete').length;
+      return `
+        <header class="course-head compact"><div><span class="eyebrow">${v.license}</span><h1>Simulacro</h1><p>Cuando ya entiendas las unidades y hayas practicado el banco, haz una prueba con el formato del examen oficial.</p></div></header>
+        ${tabs()}
+        <div class="sim-intro">
+          <div class="sim-number"><b>40</b><span>preguntas</span></div><div class="sim-number"><b>40</b><span>minutos</span></div><div class="sim-number"><b>35</b><span>mínimo correcto</span></div>
+          <div class="sim-copy"><h2>Como el simulador del MTC</h2><p>Seleccionaremos 40 preguntas aleatorias entre las que no están marcadas como desactualizadas. Durante el simulacro no verás explicaciones; aparecen al terminar.</p><small>${eligible} preguntas disponibles para generar pruebas vigentes.</small><button class="primary-btn" data-start-sim>Comenzar simulacro →</button></div>
+        </div>`;
+    }
+
+    const sim = state.sim;
+    const bankMap = new Map(bank.map(q => [q.id, q]));
+    const questions = sim.ids.map(id => bankMap.get(id)).filter(Boolean);
+    const index = Math.min(sim.index, questions.length - 1);
+    const q = questions[index];
+
+    if (sim.finished) return simulationResult(questions);
+
+    const savedChoice = sim.responses[q.id];
+    const tempSaved = savedChoice === undefined ? null : { choice: savedChoice, correct: savedChoice === q.correct };
+    return `
+      <header class="sim-header"><div><span class="eyebrow">Simulacro ${v.license}</span><h1>Pregunta ${index + 1} de ${questions.length}</h1></div><div class="timer" id="timer">40:00</div></header>
+      ${questionCard(q, index, questions.length, tempSaved, currentAudit(q), true)}
+      <div class="bank-nav"><button class="secondary-btn" data-sim-prev ${index === 0 ? 'disabled' : ''}>← Anterior</button><button class="primary-btn" data-sim-next>${index === questions.length - 1 ? 'Finalizar' : 'Siguiente →'}</button></div>`;
+  }
+
+  function simulationResult(questions) {
+    const sim = state.sim;
+    let score = 0;
+    const wrong = [];
+    questions.forEach(q => {
+      if (sim.responses[q.id] === q.correct) score++;
+      else wrong.push(q);
+    });
+    const passed = score >= 35;
+    return `
+      <header class="result-head ${passed ? 'pass' : 'retry'}"><span>${passed ? '✓' : '↻'}</span><div><small>Resultado</small><h1>${score} / 40</h1><p>${passed ? 'Alcanzaste el mínimo de 35 respuestas correctas.' : 'Aún no llegas a 35. Usa tus errores como siguiente ruta de estudio.'}</p></div></header>
+      <div class="result-grid"><div><b>${score}</b><span>Aciertos</span></div><div><b>${40 - score}</b><span>Errores</span></div><div><b>${Math.round(score / 40 * 100)}%</b><span>Puntaje</span></div></div>
+      ${wrong.length ? `<section class="review-list"><div class="section-title"><span class="eyebrow">Repaso</span><h2>Preguntas que debes entender</h2></div>${wrong.slice(0, 10).map(q => `<div class="review-item"><span>${q.id}</span><div><b>${escapeHTML(q.title)}</b><p>${escapeHTML(explanationFor(q, currentAudit(q)))}</p></div></div>`).join('')}${wrong.length > 10 ? `<p class="more-errors">Hay ${wrong.length - 10} errores más guardados en tu progreso del banco.</p>` : ''}</section>` : ''}
+      <div class="lesson-actions"><button class="secondary-btn" data-view="bank">Repasar banco</button><button class="primary-btn" data-restart-sim>Nuevo simulacro</button></div>`;
+  }
+
+  function loadingPage(text) {
+    return `<div class="loading-card"><div class="spinner"></div><h2>${text}</h2><p>La copia local se está leyendo desde el repositorio.</p></div>`;
+  }
+
+  function escapeHTML(value) {
+    return String(value || '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+  }
+  function escapeAttr(value) { return escapeHTML(value); }
+
+  async function render() {
+    clearInterval(timerId);
+    timerId = null;
+    updateShell();
+
+    if (['bank', 'sim'].includes(state.view)) {
+      content.innerHTML = loadingPage('Cargando balotario…');
+      await loadBank(state.vehicle);
+    }
+
+    let html = '';
+    if (state.view === 'unit') html = unitPage();
+    else if (state.view === 'bank') html = bankPage();
+    else if (state.view === 'sim') html = simulationPage();
+    else html = learnPage();
+    content.innerHTML = html;
+    updateShell();
+    if (state.view === 'sim' && state.sim && !state.sim.finished) startTimer();
+  }
+
+  function answerBank(qId, choice) {
+    const bank = banks[state.vehicle] || [];
+    const q = bank.find(x => x.id === qId);
+    if (!q) return;
+    const audit = currentAudit(q);
+    if (audit.level === 'obsolete') {
+      state.answers[keyFor(state.vehicle, q)] = { choice, correct: choice === q.correct, historical: true };
+    } else {
+      state.answers[keyFor(state.vehicle, q)] = { choice, correct: choice === q.correct };
+    }
+    saveState();
+    render();
+  }
+
+  function startSimulation() {
+    const bank = (banks[state.vehicle] || []).filter(q => currentAudit(q).level !== 'obsolete');
+    const shuffled = [...bank].sort(() => Math.random() - 0.5).slice(0, 40);
+    state.sim = {
+      vehicle: state.vehicle,
+      ids: shuffled.map(q => q.id),
+      index: 0,
+      responses: {},
+      startedAt: Date.now(),
+      duration: 40 * 60 * 1000,
+      finished: false
+    };
+    saveState();
+    render();
+  }
+
+  function startTimer() {
+    const tick = () => {
+      if (!state.sim || state.sim.finished) return;
+      const left = Math.max(0, state.sim.duration - (Date.now() - state.sim.startedAt));
+      const m = Math.floor(left / 60000);
+      const s = Math.floor((left % 60000) / 1000);
+      const el = $('#timer');
+      if (el) el.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+      if (left <= 0) finishSimulation();
+    };
+    tick();
+    timerId = setInterval(tick, 1000);
+  }
+
+  function finishSimulation() {
+    if (!state.sim) return;
+    state.sim.finished = true;
+    const bank = banks[state.vehicle] || [];
+    const map = new Map(bank.map(q => [q.id, q]));
+    state.sim.ids.forEach(id => {
+      const q = map.get(id);
+      if (!q) return;
+      const choice = state.sim.responses[id];
+      if (choice !== undefined) state.answers[keyFor(state.vehicle, q)] = { choice, correct: choice === q.correct, fromSim: true };
+      else state.answers[keyFor(state.vehicle, q)] = { choice: -1, correct: false, fromSim: true };
+    });
+    saveState();
+    render();
+  }
+
+  function closeMobile() {
+    sidebar?.classList.remove('open');
+    scrim?.classList.remove('show');
+  }
+
+  document.addEventListener('click', event => {
+    const target = event.target.closest('button,a,summary,select');
+    if (!target) return;
+
+    if (target.dataset.vehicle) return route(target.dataset.vehicle, 'learn');
+    if (target.dataset.mobileVehicle) return route(target.dataset.mobileVehicle, 'learn');
+    if (target.dataset.view) return route(state.vehicle, target.dataset.view);
+    if (target.dataset.unit) return openUnit(target.dataset.unit);
+
+    if (target.hasAttribute('data-rule-next')) {
+      const unit = vehicle().units.find(u => u.id === state.unit);
+      if (unit && state.rule < unit.rules.length - 1) { state.rule++; saveState(); render(); window.scrollTo({top:0,behavior:'smooth'}); }
+      return;
+    }
+    if (target.hasAttribute('data-rule-prev')) {
+      if (state.rule > 0) { state.rule--; saveState(); render(); window.scrollTo({top:0,behavior:'smooth'}); }
+      return;
+    }
+    if (target.dataset.unitComplete) {
+      const list = state.completedUnits[state.vehicle];
+      if (!list.includes(target.dataset.unitComplete)) list.push(target.dataset.unitComplete);
+      saveState();
+      state.view = 'learn'; state.unit = null; state.rule = 0;
+      history.replaceState(null, '', `#${state.vehicle}/learn`);
+      render();
+      return;
+    }
+
+    if (target.dataset.choice !== undefined) {
+      const card = target.closest('[data-question-id]');
+      const qId = Number(card?.dataset.questionId);
+      const choice = Number(target.dataset.choice);
+      if (state.view === 'sim' && state.sim) {
+        state.sim.responses[qId] = choice;
+        saveState();
+        render();
+      } else answerBank(qId, choice);
+      return;
+    }
+
+    if (target.dataset.filter) {
+      state.bankFilter[state.vehicle] = target.dataset.filter;
+      state.bankIndex[state.vehicle] = 0;
+      saveState(); render(); return;
+    }
+    if (target.hasAttribute('data-reset-filters')) {
+      state.bankFilter[state.vehicle] = 'all'; state.bankTopic[state.vehicle] = ''; state.bankIndex[state.vehicle] = 0; saveState(); render(); return;
+    }
+    if (target.hasAttribute('data-bank-prev')) {
+      state.bankIndex[state.vehicle] = Math.max(0, state.bankIndex[state.vehicle] - 1); saveState(); render(); window.scrollTo({top:0,behavior:'smooth'}); return;
+    }
+    if (target.hasAttribute('data-bank-next')) {
+      const list = filteredBank(state.vehicle);
+      state.bankIndex[state.vehicle] = state.bankIndex[state.vehicle] >= list.length - 1 ? 0 : state.bankIndex[state.vehicle] + 1;
+      saveState(); render(); window.scrollTo({top:0,behavior:'smooth'}); return;
+    }
+    if (target.hasAttribute('data-random-question')) {
+      const list = filteredBank(state.vehicle);
+      state.bankIndex[state.vehicle] = Math.floor(Math.random() * Math.max(1, list.length)); saveState(); render(); window.scrollTo({top:0,behavior:'smooth'}); return;
+    }
+
+    if (target.hasAttribute('data-start-sim') || target.hasAttribute('data-restart-sim')) return startSimulation();
+    if (target.hasAttribute('data-sim-prev') && state.sim) { state.sim.index = Math.max(0, state.sim.index - 1); saveState(); render(); return; }
+    if (target.hasAttribute('data-sim-next') && state.sim) {
+      if (state.sim.index >= state.sim.ids.length - 1) finishSimulation();
+      else { state.sim.index++; saveState(); render(); }
+      return;
+    }
+  });
+
+  document.addEventListener('change', event => {
+    if (event.target.id === 'topicSelect') {
+      state.bankTopic[state.vehicle] = event.target.value;
+      state.bankIndex[state.vehicle] = 0;
+      saveState(); render();
+    }
+  });
+
+  $('#menuBtn')?.addEventListener('click', () => {
+    sidebar?.classList.toggle('open');
+    scrim?.classList.toggle('show');
+  });
+  scrim?.addEventListener('click', closeMobile);
+  $('#themeBtn')?.addEventListener('click', cycleTheme);
+  $('#collapseBtn')?.addEventListener('click', () => document.body.classList.toggle('sidebar-collapsed'));
+  window.addEventListener('hashchange', () => { parseHash(); render(); });
+
+  (async function init() {
+    parseHash();
+    prepareShell();
+    setTheme(state.theme);
+    await loadManifest();
+    await loadBank(state.vehicle);
+    render();
+  })();
 })();
