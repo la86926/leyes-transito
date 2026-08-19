@@ -205,7 +205,7 @@
       };
     }
 
-    return { level: 'current', title: 'Vigencia revisada', message: 'No se detectó en esta pregunta una referencia histórica conocida que contradiga las actualizaciones incorporadas al curso.', source: q.fundamento ? 'rnt' : 'banks' };
+    return { level: 'bank', title: 'Pregunta del balotario MTC', message: 'La respuesta se conserva del balotario publicado por el MTC. Si no aparece una alerta específica, significa que el control automático no detectó uno de los cambios normativos conocidos; no equivale a una revisión artículo por artículo de esta pregunta.', source: 'banks' };
   }
 
   function explanationFor(q, audit) {
@@ -410,9 +410,9 @@
   }
 
   function questionCard(q, index, total, saved, audit, simulation) {
-    const statusClass = audit.level === 'obsolete' ? 'obsolete' : audit.level === 'review' ? 'review' : 'current';
+    const statusClass = audit.level === 'obsolete' ? 'obsolete' : audit.level === 'review' ? 'review' : 'bank';
     return `<article class="question-card ${simulation ? 'simulation-card' : ''}" data-question-id="${q.id}">
-      <div class="question-meta"><span>Pregunta ${index + 1} de ${total}</span><span class="audit-badge ${statusClass}">${audit.level === 'obsolete' ? 'Desactualizada' : audit.level === 'review' ? 'Revisar vigencia' : 'Vigencia revisada'}</span></div>
+      <div class="question-meta"><span>Pregunta ${index + 1} de ${total}</span><span class="audit-badge ${statusClass}">${audit.level === 'obsolete' ? 'Desactualizada' : audit.level === 'review' ? 'Revisar vigencia' : 'Balotario MTC'}</span></div>
       <div class="question-progress"><i style="width:${((index + 1) / total) * 100}%"></i></div>
       <small class="question-topic">${escapeHTML(q.topic)}</small>
       <h2>${escapeHTML(q.title)}</h2>
@@ -420,8 +420,12 @@
       <div class="answers-list">${q.options.map((o, i) => {
         let cls = '';
         if (saved) {
-          if (i === q.correct) cls = 'correct';
-          else if (i === saved.choice && !saved.correct) cls = 'wrong';
+          if (simulation) {
+            if (i === saved.choice) cls = 'selected';
+          } else {
+            if (i === q.correct) cls = 'correct';
+            else if (i === saved.choice && !saved.correct) cls = 'wrong';
+          }
         }
         return `<button class="answer-option ${cls}" data-choice="${i}" ${saved && !simulation ? 'disabled' : ''}><span>${String.fromCharCode(65 + i)}</span><b>${escapeHTML(optionText(o))}</b></button>`;
       }).join('')}</div>
@@ -435,7 +439,7 @@
       <div class="feedback-title"><span>${saved.correct ? '✓' : '×'}</span><div><b>${saved.correct ? 'Correcto' : 'Revisa esta idea'}</b><small>${saved.correct ? 'Bien razonado.' : `La respuesta del balotario es ${String.fromCharCode(65 + q.correct)}.`}</small></div></div>
       <div class="explanation"><b>Por qué</b><p>${escapeHTML(explanation)}</p></div>
       ${q.fundamento ? `<div class="foundation"><b>Fundamento del balotario</b><span>${escapeHTML(q.fundamento)}</span></div>` : ''}
-      ${audit.level !== 'current' ? `<div class="audit-note ${audit.level}"><b>${audit.title}</b><p>${audit.message}</p></div>` : ''}
+      ${['obsolete','review'].includes(audit.level) ? `<div class="audit-note ${audit.level}"><b>${audit.title}</b><p>${audit.message}</p></div>` : ''}
     </section>`;
   }
 
