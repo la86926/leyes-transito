@@ -26,6 +26,41 @@ jobs:
           curl --fail --location --retry 3 "${BASE}/a1_questions.json" -o data/questions-auto.json
           curl --fail --location --retry 3 "${BASE}/b2b_questions.json" -o data/questions-moto.json
 
+      - name: Clean extraction artifacts without changing question keys
+        shell: python
+        run: |
+          import json, re
+          from pathlib import Path
+
+          def clean_text(value):
+              value = str(value or '').replace('\u00a0', ' ')
+              value = re.sub(r'\s+', ' ', value).strip()
+              value = value.replace('Lacalzada', 'La calzada').replace('señalares', 'señales')
+              return value
+
+          def clean_option(value):
+              value = clean_text(value)
+              # Some PDF extractions accidentally append the beginning of the next option.
+              # Remove only a clearly embedded option label after punctuation.
+              match = re.search(r'(?<=[.;:])\s+[a-dA-D]\)\s+(?=[A-ZÁÉÍÓÚÑ¿])', value)
+              if match:
+                  value = value[:match.start()].rstrip()
+              return value
+
+          for filename in ('data/questions-auto.json', 'data/questions-moto.json'):
+              path = Path(filename)
+              payload = json.loads(path.read_text(encoding='utf-8'))
+              items = payload.get('data', payload) if isinstance(payload, dict) else payload
+              for q in items:
+                  if 'title' in q: q['title'] = clean_text(q['title'])
+                  if 'statement' in q: q['statement'] = clean_text(q['statement'])
+                  if 'topic' in q: q['topic'] = clean_text(q['topic'])
+                  if 'section' in q: q['section'] = clean_text(q['section'])
+                  if 'fundamento' in q: q['fundamento'] = clean_text(q['fundamento'])
+                  if 'options' in q: q['options'] = [clean_option(x) for x in q['options']]
+                  if 'alternatives' in q: q['alternatives'] = [clean_option(x) for x in q['alternatives']]
+              path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding='utf-8')
+
       - name: Fetch pinned image source
         shell: bash
         run: |
@@ -43,11 +78,8 @@ jobs:
           src = Path('/tmp/mtc-quiz/app/src/main/assets/images')
           dst = Path('assets/questions')
           dst.mkdir(parents=True, exist_ok=True)
-
-          # Remove old vendored question images but keep the folder predictable.
           for p in dst.iterdir():
-              if p.is_file():
-                  p.unlink()
+              if p.is_file(): p.unlink()
 
           requested = set()
           for bank in ('data/questions-auto.json', 'data/questions-moto.json'):
@@ -57,8 +89,7 @@ jobs:
                   for name in q.get('imagens', []) or []:
                       requested.add(name)
 
-          manifest = {}
-          missing = []
+          manifest, missing = {}, []
           for name in sorted(requested):
               matches = [p for p in src.glob(name + '.*') if p.is_file()]
               if not matches:
@@ -69,18 +100,44 @@ jobs:
               shutil.copy2(chosen, target)
               manifest[name] = target.name
 
-          Path('data/question-images.json').write_text(
-              json.dumps(manifest, ensure_ascii=False, indent=2),
-              encoding='utf-8'
-          )
-          print(f'Images requested: {len(requested)}')
-          print(f'Images copied: {len(manifest)}')
-          if missing:
-              raise SystemExit('Missing referenced images: ' + ', '.join(missing))
+          Path('data/question-images.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding='utf-8')
+          print(f'Images requested: {len(requested)}; copied: {len(manifest)}')
+          if missing: raise SystemExit('Missing referenced images: ' + ', '.join(missing))
 
-      - name: Validate banks
+      - name: Make audit wording conservative and simulation neutral
         shell: python
         run: |
+          from pathlib import Path
+          path = Path('app.js')
+          text = path.read_text(encoding='utf-8')
+
+          old = "return { level: 'current', title: 'Vigencia revisada', message: 'No se detectó en esta pregunta una referencia histórica conocida que contradiga las actualizaciones incorporadas al curso.', source: q.fundamento ? 'rnt' : 'banks' };"
+          new = "return { level: 'bank', title: 'Pregunta del balotario MTC', message: 'La respuesta se conserva del balotario publicado por el MTC. Si no aparece una alerta específica, significa que el control automático no detectó uno de los cambios normativos conocidos; no equivale a una revisión artículo por artículo de esta pregunta.', source: 'banks' };"
+          if old in text: text = text.replace(old, new)
+
+          old = "const statusClass = audit.level === 'obsolete' ? 'obsolete' : audit.level === 'review' ? 'review' : 'current';"
+          new = "const statusClass = audit.level === 'obsolete' ? 'obsolete' : audit.level === 'review' ? 'review' : 'bank';"
+          if old in text: text = text.replace(old, new)
+
+          old = "${audit.level === 'obsolete' ? 'Desactualizada' : audit.level === 'review' ? 'Revisar vigencia' : 'Vigencia revisada'}"
+          new = "${audit.level === 'obsolete' ? 'Desactualizada' : audit.level === 'review' ? 'Revisar vigencia' : 'Balotario MTC'}"
+          if old in text: text = text.replace(old, new)
+
+          old = "if (saved) {\n          if (i === q.correct) cls = 'correct';\n          else if (i === saved.choice && !saved.correct) cls = 'wrong';\n        }"
+          new = "if (saved) {\n          if (simulation) {\n            if (i === saved.choice) cls = 'selected';\n          } else {\n            if (i === q.correct) cls = 'correct';\n            else if (i === saved.choice && !saved.correct) cls = 'wrong';\n          }\n        }"
+          if old in text: text = text.replace(old, new)
+
+          old = "${audit.level !== 'current' ? `<div class=\"audit-note ${audit.level}\"><b>${audit.title}</b><p>${audit.message}</p></div>` : ''}"
+          new = "${['obsolete','review'].includes(audit.level) ? `<div class=\"audit-note ${audit.level}\"><b>${audit.title}</b><p>${audit.message}</p></div>` : ''}"
+          if old in text: text = text.replace(old, new)
+
+          path.write_text(text, encoding='utf-8')
+
+      - name: Validate banks and JavaScript
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
           import json
           from pathlib import Path
           expected = {'questions-auto.json': 200, 'questions-moto.json': 204}
@@ -89,18 +146,25 @@ jobs:
               items = payload.get('data', payload) if isinstance(payload, dict) else payload
               if len(items) != count:
                   raise SystemExit(f'{name}: expected {count}, got {len(items)}')
+              for q in items:
+                  opts = q.get('options', q.get('alternatives', []))
+                  if len(opts) != 4:
+                      raise SystemExit(f'{name} question {q.get("id")}: expected 4 options, got {len(opts)}')
               print(f'{name}: {len(items)} questions OK')
+          PY
+          node --check app.js
+          node --check data.js
 
-      - name: Commit vendored data
+      - name: Commit vendored study data
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/questions-auto.json data/questions-moto.json data/question-images.json assets/questions
+          git add app.js data/questions-auto.json data/questions-moto.json data/question-images.json assets/questions
           if git diff --cached --quiet; then
-            echo 'Question banks and images already up to date.'
+            echo 'Study data already up to date.'
           else
-            git commit -m 'Add local MTC question images'
+            git commit -m 'Clean and validate MTC study bank'
             git push
           fi
